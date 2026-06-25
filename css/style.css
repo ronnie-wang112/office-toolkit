@@ -169,65 +169,41 @@ body {
 :root:not([data-theme="dark"]) .icon-moon { display:none; }
 
 /* ========================================
-   TAB NAVIGATION
-   ======================================== */
-.tab-nav {
-  display: flex; gap: 6px;
-  padding: 14px 20px;
-  background: var(--bg-header);
-  border-bottom: 1px solid var(--border);
-  overflow-x: auto; -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  position: sticky; top: 57px; z-index: 99;
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-}
-.tab-nav::-webkit-scrollbar { display:none; }
-
-.tab-btn {
-  flex-shrink: 0;
-  padding: 8px 18px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-full);
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: 0.875rem; font-weight: 500;
-  cursor: pointer; white-space: nowrap;
-  transition: all var(--duration-fast) var(--ease-out);
-  position: relative;
-}
-.tab-btn:hover { color: var(--text); background: var(--bg-hover); }
-.tab-btn.active {
-  color: #fff; font-weight: 600;
-  border-color: transparent;
-}
-/* Category-colored active tabs */
-.tab-btn[data-category="pdf"].active    { background: var(--cat-pdf); }
-.tab-btn[data-category="image"].active  { background: var(--cat-image); }
-.tab-btn[data-category="scan"].active   { background: var(--cat-scan); }
-.tab-btn[data-category="utility"].active{ background: var(--cat-util); }
-
-/* ========================================
    MAIN CONTENT
    ======================================== */
 .main-content {
   max-width: 1200px; margin: 0 auto;
   padding: 28px 20px 40px;
-  min-height: calc(100vh - 130px);
+  min-height: calc(100vh - 80px);
 }
 
-/* Page title area */
-.page-title-area {
-  margin-bottom: 24px;
+
+/* ----- Section headers ----- */
+.section-header {
+  margin: 32px 0 14px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--border-light);
 }
-.page-title-area h2 {
-  font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em;
+.section-header:first-child { margin-top: 0; }
+.section-header h3 {
+  font-size: 1.15rem; font-weight: 700; letter-spacing: -0.01em;
   color: var(--text);
 }
-.page-title-area p {
-  font-size: 0.9rem; color: var(--text-muted);
-  margin-top: 4px;
+.section-header p {
+  font-size: 0.82rem; color: var(--text-muted);
+  margin-top: 2px;
 }
+.section-header[data-color="pdf"]    { border-color: var(--cat-pdf-glow); }
+.section-header[data-color="pdf"] h3 { color: var(--cat-pdf); }
+.section-header[data-color="image"]  { border-color: var(--cat-image-glow); }
+.section-header[data-color="image"] h3 { color: var(--cat-image); }
+.section-header[data-color="scan"]   { border-color: var(--cat-scan-glow); }
+.section-header[data-color="scan"] h3 { color: var(--cat-scan); }
+.section-header[data-color="util"]   { border-color: var(--cat-util-glow); }
+.section-header[data-color="util"] h3 { color: var(--cat-util); }
+
+/* ----- Tool home wrapper ----- */
+.tool-home {}
 
 /* ========================================
    CARDS GRID
@@ -625,8 +601,6 @@ body {
    ======================================== */
 @media (max-width:768px) {
   .header-inner { padding:10px 14px; }
-  .tab-nav { padding:10px 14px; }
-  .tab-btn { padding:7px 14px; font-size:0.82rem; }
   .main-content { padding:20px 14px 32px; }
   .cards-grid { grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:10px; }
   .tool-card { padding:16px 14px; border-radius:var(--radius); }
@@ -647,8 +621,6 @@ body {
   .header-inner { padding:8px 10px; }
   .logo { font-size:0.95rem; }
   .logo-icon { width:28px; height:28px; font-size:0.75rem; }
-  .tab-nav { padding:8px 10px; gap:4px; }
-  .tab-btn { padding:6px 12px; font-size:0.78rem; }
   .main-content { padding:16px 10px 24px; }
   /* Single column on phone */
   .cards-grid { grid-template-columns:1fr; gap:8px; }
@@ -712,9 +684,3 @@ body {
   color: var(--text); margin-bottom: 4px;
 }
 
-/* Center tab-nav buttons on wide screens */
-@media (min-width: 769px) {
-  .tab-nav {
-    justify-content: center;
-  }
-}

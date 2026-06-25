@@ -39,26 +39,14 @@
     </div>
   </header>
 
-  <nav class="tab-nav" id="tabNav">
-    <button class="tab-btn active" data-category="pdf">PDF 工具</button>
-    <button class="tab-btn" data-category="image">图片工具</button>
-    <button class="tab-btn" data-category="scan">扫描 & OCR</button>
-    <button class="tab-btn" data-category="utility">实用工具</button>
-  </nav>
-
   <main class="main-content" id="mainContent">
-    <div class="page-title-area" id="pageTitleArea">
-      <h2>PDF 工具</h2>
-      <p>合并、拆分、压缩、转换 PDF 文件</p>
-    </div>
-    <div class="cards-grid" id="cardsGrid"></div>
+    <div class="tool-home" id="cardsGrid"></div>
     <div class="tool-workspace hidden" id="toolWorkspace">
       <div class="back-nav">
         <button class="back-btn" id="backBtn">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
           返回
         </button>
-        <span class="tool-breadcrumb" id="toolBreadcrumb"></span>
       </div>
       <div class="tool-container" id="toolContainer"></div>
     </div>
@@ -74,12 +62,12 @@
       <div class="feature-list">
         <span>PDF 合并/拆分/加密</span>
         <span>PDF 压缩（快速/深度）</span>
-        <span>图片压缩/抠图/转换</span>
-        <span>扫描增强/OCR</span>
+        <span>图片压缩/转换/裁剪</span>
+        <span>拍照扫描/增强</span>
         <span>Word 转 PDF</span>
         <span>二维码/Markdown</span>
       </div>
-      <p class="version-text">v1.2 · 完全离线可用 · 纯前端</p>
+      <p class="version-text">v1.3 · 完全离线可用 · 纯前端</p>
       <button class="btn btn-primary modal-close">关闭</button>
     </div>
   </div>
@@ -96,10 +84,8 @@
   <script src="js/tools/word2pdf.js"></script>
   <script src="js/tools/img-compress.js"></script>
   <script src="js/tools/img-convert.js"></script>
-  <script src="js/tools/bg-remove.js"></script>
   <script src="js/tools/img-crop.js"></script>
   <script src="js/tools/scanner.js"></script>
-  <script src="js/tools/ocr.js"></script>
   <script src="js/tools/qrcode-gen.js"></script>
   <script src="js/tools/qrcode-scan.js"></script>
   <script src="js/tools/markdown.js"></script>
