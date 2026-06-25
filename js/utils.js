@@ -1,4 +1,4 @@
-// ===== Office Toolkit - Shared Utilities =====
+// ===== KEOUKE Office Tools - Shared Utilities =====
 const Utils = {
   // Format file size
   formatSize(bytes) {

@@ -1,6 +1,6 @@
 {
-  "name": "本地办公工具箱",
-  "short_name": "办公工具箱",
+  "name": "克欧克办公工具",
+  "short_name": "克欧克工具",
   "description": "纯前端本地办公工具集合 - PDF处理、图片压缩、扫描OCR、二维码等",
   "start_url": ".",
   "display": "standalone",

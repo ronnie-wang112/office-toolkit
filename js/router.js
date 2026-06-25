@@ -1,4 +1,4 @@
-// ===== Office Toolkit - Router & App Core (Single Page) =====
+// ===== KEOUKE Office Tools - Router & App Core (Single Page) =====
 
 // SVG Icon library
 const Icons = {
