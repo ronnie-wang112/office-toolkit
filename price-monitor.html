@@ -247,9 +247,9 @@ body {
 
 // Fallback base prices (RMB unless noted)
 const FALLBACK_PRICES = {
-  usd_cny: 7.25,
+  usd_cny: 7.28,
   crude_oil: 78.50,     // USD/barrel
-  gold: 560.00,         // RMB/g
+  gold: 720.00,         // RMB/g (estimated)
   pp: 7850,            // RMB/ton
   abs: 11200,
   pc: 16800,
@@ -316,36 +316,48 @@ function generateHistory(basePrice, days = 90) {
   return data;
 }
 
-// Fetch USD/CNY from free API
+// Fetch USD/CNY - try multiple sources for accuracy
 async function fetchUSDCny() {
-  try {
-    const resp = await fetch('https://open.er-api.com/v6/latest/USD');
-    const data = await resp.json();
-    if (data && data.rates && data.rates.CNY) {
-      return { price: data.rates.CNY, source: 'API' };
-    }
-  } catch(e) {}
+  const sources = [
+    { url: 'https://open.er-api.com/v6/latest/USD', key: 'CNY' },
+    { url: 'https://api.exchangerate-api.com/v4/latest/USD', key: 'CNY' },
+  ];
+  for (const src of sources) {
+    try {
+      const resp = await fetch(src.url);
+      const data = await resp.json();
+      if (data?.rates?.[src.key]) {
+        return { price: data.rates[src.key], source: 'API' };
+      }
+    } catch(e) { continue; }
+  }
   return { price: FALLBACK_PRICES.usd_cny, source: '估算' };
 }
 
-// Fetch gold price
-async function fetchGold() {
-  try {
-    // Try multiple sources
-    const sources = [
-      'https://api.gold-api.com/price',
-    ];
-    for (const url of sources) {
-      try {
-        const resp = await fetch(url, { signal: AbortSignal.timeout(5000) });
-        const data = await resp.json();
-        if (data && data.price) {
-          return { price: data.price, source: 'API' };
-        }
-      } catch(e) { continue; }
-    }
-  } catch(e) {}
-  return { price: FALLBACK_PRICES.gold, source: '估算' };
+// Fetch gold price (needs USD/CNY rate for conversion)
+async function fetchGold(usdCnyRate) {
+  // Try multiple gold price APIs
+  const sources = [
+    // Returns USD/oz, needs conversion
+    { url: 'https://api.gold-api.com/price', handler: (d) => d.price ? d.price / 31.1035 * usdCnyRate : null },
+    // GoldPrice data in CNY/g
+    { url: 'https://data-asg.goldprice.org/dbXRates/CNY', handler: (d) => d.items?.[0]?.xauPrice ? d.items[0].xauPrice : null },
+  ];
+  
+  for (const src of sources) {
+    try {
+      const resp = await fetch(src.url, { signal: AbortSignal.timeout(5000) });
+      const data = await resp.json();
+      const price = src.handler(data);
+      if (price && price > 300 && price < 2000) {
+        return { price: Math.round(price * 100) / 100, source: 'API' };
+      }
+    } catch(e) { continue; }
+  }
+  
+  // Fallback: estimate based on international gold ~$3200/oz at current rate
+  const estimated = (3200 / 31.1035 * usdCnyRate);
+  return { price: Math.round(estimated * 100) / 100, source: '估算' };
 }
 
 // Crude oil - use fallback (no good free API)
@@ -363,12 +375,12 @@ function fetchPlasticPrice(basePrice) {
 async function fetchAllPrices() {
   const results = {};
   
-  // Fetch USD/CNY
+  // Fetch USD/CNY first (needed for gold conversion)
   const fx = await fetchUSDCny();
   results.usd_cny = fx.price;
   
-  // Fetch gold
-  const gold = await fetchGold();
+  // Fetch gold with exchange rate for conversion
+  const gold = await fetchGold(fx.price);
   results.gold = gold.price;
   
   // Crude oil (fallback)
