@@ -1,5 +1,5 @@
 // ===== 克欧克标签制作 Tool =====
-function Tool_label_generator(container) {
+function Tool_label_gen(container) {
   // ===== CSS =====
   var style = document.createElement("style");
   style.textContent = `*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -746,6 +746,6 @@ renderLabel();
 
 }
 
-function Tool_label_generator_deactivate() {
+function Tool_label_gen_deactivate() {
   // cleanup if needed
 }
