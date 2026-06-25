@@ -1,9 +1,12 @@
-// ===== 长截图工具 — 多图纵向拼接 =====
+// ===== 长截图拼接工具 =====
 function Tool_long_screenshot(container) {
   let images = [];
   let overlapResults = [];
-  let totalHeight = 0;
-  let canvasWidth = 0;
+  let resultBlob = null;
+  let manualOverlaps = [];
+  let draggingIdx = -1;
+  let dragStartY = 0;
+  let dragStartOverlap = 0;
 
   container.innerHTML = `
     <div class="drop-zone" id="lsDrop">
@@ -17,13 +20,9 @@ function Tool_long_screenshot(container) {
         <label>拼接模式</label>
         <select id="lsMode">
           <option value="auto">自动检测重合</option>
-          <option value="manual">手动设置重叠像素</option>
+          <option value="manual">手动拖动调整</option>
           <option value="none">直接拼接（无重叠）</option>
         </select>
-      </div>
-      <div class="form-group hidden" id="lsManualGrp" style="flex:1;min-width:160px">
-        <label>重叠像素</label>
-        <input type="number" id="lsOverlapPx" value="100" min="0" max="500" step="10">
       </div>
       <div class="form-group" style="flex:1;min-width:160px">
         <label>输出宽度</label>
@@ -39,6 +38,7 @@ function Tool_long_screenshot(container) {
       <button class="btn btn-primary" id="lsStitchBtn">开始拼接</button>
       <button class="btn btn-secondary" id="lsResetBtn">重新选择</button>
     </div>
+    <div id="lsManualArea" class="hidden" style="margin-top:16px"></div>
     <div class="progress-bar hidden" id="lsProgress"><div class="progress-bar-fill"></div></div>
     <div class="progress-text hidden" id="lsProgressText"></div>
     <div class="result-area hidden" id="lsResultArea">
@@ -55,10 +55,9 @@ function Tool_long_screenshot(container) {
 
   const dropZone = container.querySelector('#lsDrop');
   const imageList = container.querySelector('#lsImageList');
-  const options = container.querySelector('#lsOptions');
+  const optsDiv = container.querySelector('#lsOptions');
   const actions = container.querySelector('#lsActions');
   const mode = container.querySelector('#lsMode');
-  const manualGrp = container.querySelector('#lsManualGrp');
   const stitchBtn = container.querySelector('#lsStitchBtn');
   const resetBtn = container.querySelector('#lsResetBtn');
   const progress = container.querySelector('#lsProgress');
@@ -66,49 +65,28 @@ function Tool_long_screenshot(container) {
   const resultArea = container.querySelector('#lsResultArea');
   const resultCanvas = container.querySelector('#lsResultCanvas');
   const overlapInfo = container.querySelector('#lsOverlapInfo');
-  const downloadBtn = container.querySelector('#lsDownload');
-  const copyBtn = container.querySelector('#lsCopy');
+  const manualArea = container.querySelector('#lsManualArea');
 
-  // Drop handler
-  dropZone.addEventListener('click', () => selectImages());
+  dropZone.addEventListener('click', () => pickImages());
   dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
   dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
   dropZone.addEventListener('drop', e => {
-    e.preventDefault();
-    dropZone.classList.remove('drag-over');
+    e.preventDefault(); dropZone.classList.remove('drag-over');
     if (e.dataTransfer.files.length > 0) loadImages(Array.from(e.dataTransfer.files));
   });
 
   mode.addEventListener('change', () => {
-    manualGrp.classList.toggle('hidden', mode.value !== 'manual');
+    if (mode.value === 'manual' && images.length >= 2) renderManualUI();
+    else manualArea.classList.add('hidden');
   });
 
-  resetBtn.addEventListener('click', () => resetAll());
-  stitchBtn.addEventListener('click', () => doStitch());
-
-  downloadBtn.addEventListener('click', () => {
-    resultCanvas.toBlob(blob => {
-      Utils.download(blob, '长截图_' + new Date().toISOString().slice(0,10) + '.png');
-      Utils.toast('长图已下载', 'success');
-    }, 'image/png');
+  resetBtn.addEventListener('click', resetAll);
+  stitchBtn.addEventListener('click', () => {
+    if (mode.value === 'manual') doManualStitch();
+    else doAutoStitch();
   });
 
-  copyBtn.addEventListener('click', async () => {
-    try {
-      resultCanvas.toBlob(async blob => {
-        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-        Utils.toast('已复制到剪贴板', 'success');
-      }, 'image/png');
-    } catch(e) {
-      // Fallback for mobile: use download
-      resultCanvas.toBlob(blob => {
-        Utils.download(blob, '长截图.png');
-        Utils.toast('已触发下载保存', 'success');
-      }, 'image/png');
-    }
-  });
-
-  async function selectImages() {
+  async function pickImages() {
     const files = await Utils.pickFiles('image/*', true);
     if (files && files.length >= 2) loadImages(Array.from(files));
     else if (files && files.length < 2) Utils.toast('请至少选择 2 张图片', 'error');
@@ -116,240 +94,382 @@ function Tool_long_screenshot(container) {
 
   async function loadImages(files) {
     images = [];
-    const validFiles = files.filter(f => f.type.startsWith('image/'));
-    if (validFiles.length < 2) {
-      Utils.toast('请至少选择 2 张图片', 'error');
-      return;
+    manualOverlaps = [];
+    for (const file of files) {
+      if (!file.type.startsWith('image/')) continue;
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      await new Promise(r => { img.onload = r; });
+      images.push({ img, name: file.name, w: img.naturalWidth, h: img.naturalHeight });
     }
+    if (images.length < 2) { Utils.toast('请至少选择 2 张图片', 'error'); return; }
 
-    for (const file of validFiles) {
-      const img = await Utils.loadImageFromFile(file);
-      images.push({ file, img, name: file.name, w: img.width, h: img.height });
-    }
+    // Init manual overlaps to 0
+    manualOverlaps = new Array(images.length - 1).fill(0);
 
+    dropZone.classList.add('hidden');
+    imageList.classList.remove('hidden');
+    optsDiv.classList.remove('hidden');
+    actions.classList.remove('hidden');
     renderImageList();
+
+    if (mode.value === 'manual') renderManualUI();
   }
 
   function renderImageList() {
-    dropZone.classList.add('hidden');
-    imageList.classList.remove('hidden');
-    options.classList.remove('hidden');
-    actions.classList.remove('hidden');
-
     imageList.innerHTML = `
-      <div style="font-weight:600;font-size:0.9rem;margin-bottom:8px;display:flex;align-items:center;gap:6px">
-        已选 ${images.length} 张图片
-        <span style="font-size:0.75rem;color:var(--text-muted)">（从上到下排列）</span>
-      </div>
+      <div style="font-weight:600;font-size:0.9rem;margin-bottom:8px">已选 ${images.length} 张图片</div>
       <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px">
         ${images.map((img, i) => `
-          <div style="flex-shrink:0;text-align:center;position:relative">
-            <div style="width:120px;height:90px;overflow:hidden;border-radius:8px;border:1px solid var(--border);background:var(--bg)">
+          <div style="flex-shrink:0;text-align:center">
+            <div style="width:100px;height:75px;overflow:hidden;border-radius:8px;border:1px solid var(--border);background:var(--bg)">
               <img src="${img.img.src}" style="width:100%;height:100%;object-fit:cover">
             </div>
-            <div style="font-size:0.7rem;margin-top:3px;color:var(--text-secondary)">${i+1}. ${img.name.slice(0,12)}</div>
-            <div style="font-size:0.65rem;color:var(--text-muted)">${img.w}×${img.h}</div>
+            <div style="font-size:0.65rem;margin-top:2px;color:var(--text-muted)">${i+1} · ${img.w}×${img.h}</div>
           </div>
         `).join('')}
+      </div>`;
+  }
+
+  // ===== Manual drag UI =====
+  function renderManualUI() {
+    const targetW = getTargetWidth();
+    manualArea.classList.remove('hidden');
+    manualArea.innerHTML = `
+      <div style="font-weight:600;font-size:0.9rem;margin-bottom:8px">拖动每张图调整重叠高度</div>
+      <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:10px">
+        点击并上下拖动图片可调整与上一张图的重叠像素
+      </div>
+      <div id="lsDragCanvasWrap" style="position:relative;overflow:hidden;border:1px solid var(--border);border-radius:8px;background:#f0f0f0;touch-action:none"></div>
+      <div style="display:flex;justify-content:space-around;margin-top:8px;font-size:0.75rem;color:var(--text-muted)">
+        ${manualOverlaps.map((o, i) => `<span>图${i+1}→图${i+2}: <b id="lsOverlapVal${i}">${o}px</b></span>`).join('')}
       </div>
     `;
+
+    setTimeout(() => renderManualPreview(), 100);
+    setupManualDrag();
   }
 
-  function resetAll() {
-    images = [];
-    overlapResults = [];
-    totalHeight = 0;
-    canvasWidth = 0;
-    dropZone.classList.remove('hidden');
-    imageList.classList.add('hidden');
-    options.classList.add('hidden');
-    actions.classList.add('hidden');
-    resultArea.classList.add('hidden');
-  }
+  function renderManualPreview() {
+    const wrap = document.getElementById('lsDragCanvasWrap');
+    if (!wrap) return;
 
-  // ---- Core: Auto overlap detection ----
-  function detectOverlap(imgTop, imgBottom, maxOverlap = 0.4) {
-    // Scale down for performance
-    const scaleW = 300 / imgTop.w;
-    const w = 300;
-    const topH = Math.round(imgTop.h * scaleW);
-    const botH = Math.round(imgBottom.h * scaleW);
+    const targetW = getTargetWidth();
+    const scale = Math.min(1, 400 / targetW);
+    const displayW = Math.round(targetW * scale);
 
-    const tmpCanvas = document.createElement('canvas');
-    tmpCanvas.width = w;
-    const ctx = tmpCanvas.getContext('2d');
+    // Build scaled image data
+    const scaled = images.map(img => ({
+      w: displayW,
+      h: Math.round(img.h * (displayW / img.w))
+    }));
 
-    // Draw top image scaled
-    ctx.drawImage(imgTop, 0, 0, w, topH);
-    const topData = ctx.getImageData(0, 0, w, topH).data;
-
-    // Draw bottom image scaled
-    ctx.clearRect(0, 0, w, botH + topH);
-    ctx.drawImage(imgBottom, 0, 0, w, botH);
-    const botData = ctx.getImageData(0, 0, w, botH).data;
-
-    const maxShift = Math.round(Math.min(topH, botH) * maxOverlap);
-    const minShift = Math.max(5, Math.round(maxShift * 0.05));
-    
-    let bestOffset = 0;
-    let bestDiff = Infinity;
-
-    // For each possible overlap, compare bottom strip of top with top strip of bottom
-    const stripH = Math.min(20, Math.round(maxShift * 0.15));
-    
-    for (let offset = minShift; offset <= maxShift; offset += 2) {
-      let diff = 0;
-      let count = 0;
-      
-      // Compare top[topH-stripH .. topH] with bottom[offset-stripH .. offset]
-      for (let y = 0; y < stripH; y += 2) {
-        const topY = topH - stripH + y;
-        const botY = offset - stripH + y;
-        for (let x = 0; x < w; x += 3) {
-          const ti = (topY * w + x) * 4;
-          const bi = (botY * w + x) * 4;
-          diff += Math.abs(topData[ti] - botData[bi]) +
-                  Math.abs(topData[ti+1] - botData[bi+1]) +
-                  Math.abs(topData[ti+2] - botData[bi+2]);
-          count++;
-        }
-      }
-      
-      const avgDiff = diff / count;
-      if (avgDiff < bestDiff) {
-        bestDiff = avgDiff;
-        bestOffset = offset;
-      }
+    let totalH = 0;
+    for (let i = 0; i < images.length; i++) {
+      totalH += scaled[i].h;
+      if (i < images.length - 1) totalH -= Math.round(manualOverlaps[i] * scale);
     }
 
-    // Convert back to original scale
-    const originalOverlap = Math.round(bestOffset / scaleW);
-    
-    // Quality check: if the best match is too poor, don't overlap
-    const threshold = 35; // max acceptable average pixel difference
-    if (bestDiff > threshold) {
-      return { overlap: 0, confidence: 0, autoDetected: false };
-    }
-
-    const confidence = Math.max(0, Math.min(100, Math.round((1 - bestDiff / threshold) * 100)));
-    return { overlap: originalOverlap, confidence, autoDetected: true };
-  }
-
-  async function doStitch() {
-    if (images.length < 2) return;
-
-    const stitchMode = mode.value;
-    const manualOverlap = parseInt(document.getElementById('lsOverlapPx')?.value) || 100;
-    const widthMode = document.getElementById('lsWidth')?.value || 'auto';
-
-    progress.classList.remove('hidden');
-    progressText.classList.remove('hidden');
-    progressText.textContent = '正在分析图片重合区域...';
-    document.querySelector('#lsProgress .progress-bar-fill').style.width = '30%';
-
-    await sleep(50); // allow UI update
-
-    // Step 1: Resize all images to same width
-    const widths = images.map(i => i.w);
-    const targetW = widthMode === 'auto' ? Math.max(...widths) : parseInt(widthMode);
-
-    // Step 2: Detect overlaps
-    overlapResults = [];
-    totalHeight = images[0].h;
-
-    for (let i = 0; i < images.length - 1; i++) {
-      progressText.textContent = `分析第 ${i+1}/${images.length-1} 组重合区域...`;
-      document.querySelector('#lsProgress .progress-bar-fill').style.width = (30 + (i/(images.length-1))*40) + '%';
-      await sleep(10);
-
-      const img1 = images[i].img;
-      const img2 = images[i+1].img;
-
-      // Scale images to target width for comparison
-      const scale1 = targetW / img1.width;
-      const scale2 = targetW / img2.width;
-      const scaledH1 = Math.round(img1.height * scale1);
-      const scaledH2 = Math.round(img2.height * scale2);
-
-      // Create scaled canvases for comparison
-      const c1 = document.createElement('canvas');
-      c1.width = targetW; c1.height = scaledH1;
-      c1.getContext('2d').drawImage(img1, 0, 0, targetW, scaledH1);
-
-      const c2 = document.createElement('canvas');
-      c2.width = targetW; c2.height = scaledH2;
-      c2.getContext('2d').drawImage(img2, 0, 0, targetW, scaledH2);
-
-      let result;
-      if (stitchMode === 'auto') {
-        result = detectOverlap(c1, c2);
-      } else if (stitchMode === 'manual') {
-        result = { overlap: manualOverlap, confidence: 100, autoDetected: false };
-      } else {
-        result = { overlap: 0, confidence: 100, autoDetected: false };
-      }
-
-      overlapResults.push(result);
-      totalHeight += scaledH2 - result.overlap;
-    }
-
-    // Step 3: Render stitched canvas
-    progressText.textContent = '正在渲染长图...';
-    document.querySelector('#lsProgress .progress-bar-fill').style.width = '80%';
-    await sleep(50);
-
-    canvasWidth = targetW;
-    const mainCanvas = document.createElement('canvas');
-    mainCanvas.width = targetW;
-    mainCanvas.height = totalHeight;
-    const ctx = mainCanvas.getContext('2d');
-
-    // Fill background white
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, targetW, totalHeight);
+    const canvas = document.createElement('canvas');
+    canvas.width = displayW;
+    canvas.height = totalH;
+    canvas.style.display = 'block';
+    canvas.style.width = '100%';
+    canvas.style.height = 'auto';
+    canvas.style.cursor = 'ns-resize';
+    const ctx = canvas.getContext('2d');
 
     let y = 0;
     for (let i = 0; i < images.length; i++) {
-      const img = images[i].img;
-      const scale = targetW / img.width;
-      const h = Math.round(img.height * scale);
-      
-      ctx.drawImage(img, 0, y, targetW, h);
+      const sh = scaled[i].h;
+      ctx.drawImage(images[i].img, 0, y, displayW, sh);
 
+      // Draw separator line
       if (i < images.length - 1) {
-        const overlap = overlapResults[i].overlap;
-        y += h - overlap;
+        const overlap = Math.round(manualOverlaps[i] * scale);
+        const sepY = y + sh - overlap;
+        ctx.strokeStyle = 'rgba(59,130,246,0.6)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 3]);
+        ctx.beginPath();
+        ctx.moveTo(0, sepY);
+        ctx.lineTo(displayW, sepY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Label
+        ctx.fillStyle = '#3b82f6';
+        ctx.font = 'bold 12px sans-serif';
+        ctx.fillText(`重叠 ${manualOverlaps[i]}px`, 6, sepY - 4);
+
+        y += sh - overlap;
+      } else {
+        y += sh;
+      }
+    }
+
+    wrap.innerHTML = '';
+    wrap.appendChild(canvas);
+    wrap._scale = scale;
+    wrap._scaled = scaled;
+  }
+
+  function setupManualDrag() {
+    const wrap = document.getElementById('lsDragCanvasWrap');
+    if (!wrap) return;
+
+    const getEventY = (e) => {
+      if (e.touches) return e.touches[0].clientY;
+      return e.clientY;
+    };
+
+    const onDown = (e) => {
+      if (images.length < 2) return;
+      const canvas = wrap.querySelector('canvas');
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const scale = wrap._scale;
+      const scaled = wrap._scaled;
+
+      const clickY = getEventY(e) - rect.top;
+      // Find which image pair the click is on
+      let accY = 0;
+      for (let i = 0; i < images.length - 1; i++) {
+        accY += scaled[i].h;
+        const overlap = Math.round(manualOverlaps[i] * scale);
+        const sepY = accY - overlap;
+        // Check if click is near the separator (±15px)
+        if (Math.abs(clickY - sepY) < 20) {
+          draggingIdx = i;
+          dragStartY = getEventY(e);
+          dragStartOverlap = manualOverlaps[i];
+          canvas.style.cursor = 'grabbing';
+          e.preventDefault();
+          return;
+        }
+        accY -= overlap;
+      }
+    };
+
+    const onMove = (e) => {
+      if (draggingIdx < 0) return;
+      const dy = getEventY(e) - dragStartY;
+      const scale = wrap._scale;
+      const maxOverlap = Math.min(
+        images[draggingIdx].h,
+        images[draggingIdx + 1].h
+      );
+      const newOverlap = Math.max(0, Math.min(maxOverlap, dragStartOverlap - Math.round(dy / scale)));
+      manualOverlaps[draggingIdx] = newOverlap;
+      renderManualPreview();
+      // Update value display
+      const valEl = document.getElementById('lsOverlapVal' + draggingIdx);
+      if (valEl) valEl.textContent = newOverlap + 'px';
+    };
+
+    const onUp = () => {
+      if (draggingIdx >= 0) {
+        const canvas = wrap.querySelector('canvas');
+        if (canvas) canvas.style.cursor = 'ns-resize';
+        draggingIdx = -1;
+      }
+    };
+
+    wrap.addEventListener('mousedown', onDown);
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    wrap.addEventListener('touchstart', onDown, { passive: false });
+    window.addEventListener('touchmove', onMove);
+    window.addEventListener('touchend', onUp);
+  }
+
+  // ===== Auto detect overlap =====
+  function detectOverlap(canvasTop, canvasBottom) {
+    const w = canvasTop.width;
+    const ht = canvasTop.height;
+    const hb = canvasBottom.height;
+    const maxO = Math.round(Math.min(ht, hb) * 0.4);
+    const minO = Math.max(5, Math.round(maxO * 0.05));
+
+    if (maxO < minO) return { overlap: 0, confidence: 0 };
+
+    const topCtx = canvasTop.getContext('2d');
+    const botCtx = canvasBottom.getContext('2d');
+
+    // Compare a narrow vertical strip (center 60%)
+    const x0 = Math.round(w * 0.2);
+    const x1 = Math.round(w * 0.8);
+    const stripW = x1 - x0;
+
+    // Sample every 4th pixel row and every 4th column
+    let bestO = 0, bestDiff = Infinity;
+
+    for (let o = minO; o <= maxO; o++) {
+      const topY = ht - o;
+      let diff = 0, count = 0;
+
+      for (let dy = 0; dy < o; dy += 4) {
+        const td = topCtx.getImageData(x0, topY + dy, stripW, 1).data;
+        const bd = botCtx.getImageData(x0, dy, stripW, 1).data;
+        for (let x = 0; x < stripW * 4; x += 16) {
+          diff += Math.abs(td[x] - bd[x]) + Math.abs(td[x+1] - bd[x+1]) + Math.abs(td[x+2] - bd[x+2]);
+          count++;
+        }
+      }
+      if (count === 0) continue;
+      const avg = diff / count;
+      if (avg < bestDiff) { bestDiff = avg; bestO = o; }
+    }
+
+    const conf = Math.max(0, Math.min(100, Math.round((1 - bestDiff / 40) * 100)));
+    if (bestDiff > 40) return { overlap: 0, confidence: 0 };
+    return { overlap: bestO, confidence: conf };
+  }
+
+  async function doAutoStitch() {
+    if (images.length < 2) return;
+
+    const targetW = getTargetWidth();
+    progress.classList.remove('hidden');
+    progressText.classList.remove('hidden');
+
+    // Step 1: Create scaled canvases
+    const scaled = images.map(img => {
+      const c = document.createElement('canvas');
+      const h = Math.round(img.h * (targetW / img.w));
+      c.width = targetW; c.height = h;
+      c.getContext('2d').drawImage(img.img, 0, 0, targetW, h);
+      return c;
+    });
+
+    // Step 2: Detect overlaps
+    overlapResults = [];
+    let totalH = scaled[0].height;
+
+    for (let i = 0; i < scaled.length - 1; i++) {
+      progressText.textContent = `分析第 ${i+1}/${scaled.length-1} 组重合区域...`;
+      const pct = 30 + Math.round((i / (scaled.length - 1)) * 40);
+      document.querySelector('#lsProgress .progress-bar-fill').style.width = pct + '%';
+
+      // Give UI a chance to update
+      await new Promise(r => setTimeout(r, 20));
+
+      const result = detectOverlap(scaled[i], scaled[i+1]);
+      overlapResults.push(result);
+      totalH += scaled[i+1].height - result.overlap;
+    }
+
+    // Step 3: Render
+    progressText.textContent = '正在渲染长图...';
+    document.querySelector('#lsProgress .progress-bar-fill').style.width = '80%';
+    await new Promise(r => setTimeout(r, 20));
+
+    renderResult(targetW, totalH, scaled);
+  }
+
+  function doManualStitch() {
+    if (images.length < 2) return;
+
+    const targetW = getTargetWidth();
+    const scaled = images.map(img => {
+      const c = document.createElement('canvas');
+      const h = Math.round(img.h * (targetW / img.w));
+      c.width = targetW; c.height = h;
+      c.getContext('2d').drawImage(img.img, 0, 0, targetW, h);
+      return c;
+    });
+
+    overlapResults = manualOverlaps.map(o => ({ overlap: o, confidence: 100 }));
+    let totalH = scaled[0].height;
+    for (let i = 0; i < scaled.length - 1; i++) {
+      totalH += scaled[i+1].height - manualOverlaps[i];
+    }
+
+    renderResult(targetW, totalH, scaled);
+  }
+
+  function renderResult(targetW, totalH, scaled) {
+    progress.classList.add('hidden');
+    progressText.classList.add('hidden');
+
+    const canvas = document.createElement('canvas');
+    canvas.width = targetW;
+    canvas.height = totalH;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, targetW, totalH);
+
+    let y = 0;
+    for (let i = 0; i < images.length; i++) {
+      const h = scaled[i].height;
+      ctx.drawImage(scaled[i], 0, y);
+      if (i < images.length - 1) {
+        y += h - overlapResults[i].overlap;
       } else {
         y += h;
       }
     }
 
-    // Step 4: Show result
-    progress.classList.add('hidden');
-    progressText.classList.add('hidden');
-    resultArea.classList.remove('hidden');
-    resultCanvas.width = targetW;
-    resultCanvas.height = totalHeight;
-    resultCanvas.style.width = '100%';
-    resultCanvas.style.height = 'auto';
-    resultCanvas.style.maxWidth = '600px';
-    resultCanvas.getContext('2d').drawImage(mainCanvas, 0, 0);
+    canvas.toBlob(blob => {
+      resultBlob = blob;
+      resultArea.classList.remove('hidden');
+      resultCanvas.width = targetW;
+      resultCanvas.height = totalH;
+      resultCanvas.style.width = '100%';
+      resultCanvas.style.height = 'auto';
+      resultCanvas.style.maxWidth = '600px';
+      resultCanvas.getContext('2d').drawImage(canvas, 0, 0);
 
-    // Show overlap info
-    const infoLines = overlapResults.map((r, i) => {
-      if (r.autoDetected) {
-        return `图${i+1}→图${i+2}: 检测到 ${r.overlap}px 重合 (置信度 ${r.confidence}%)`;
-      } else if (r.overlap > 0) {
-        return `图${i+1}→图${i+2}: 手动设置 ${r.overlap}px 重合`;
-      } else {
-        return `图${i+1}→图${i+2}: 直接拼接`;
-      }
-    }).join('<br>');
-    overlapInfo.innerHTML = infoLines;
-    Utils.toast(`长图生成完成: ${targetW}×${totalHeight}px`, 'success');
+      overlapInfo.innerHTML = overlapResults.map((r, i) => {
+        return `图${i+1}→图${i+2}: ${r.overlap}px 重叠` +
+          (r.confidence !== undefined && r.confidence < 100 ? ` (置信度 ${r.confidence}%)` : '');
+      }).join('<br>');
+
+      Utils.toast(`长图完成: ${targetW}×${totalH}px`, 'success');
+    }, 'image/png');
   }
 
-  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+  function getTargetWidth() {
+    const w = document.getElementById('lsWidth')?.value || 'auto';
+    return w === 'auto' ? Math.max(...images.map(i => i.w)) : parseInt(w);
+  }
+
+  // Download & Copy
+  container.querySelector('#lsDownload').addEventListener('click', () => {
+    if (!resultBlob) return;
+    Utils.download(resultBlob, '长截图_' + new Date().toISOString().slice(0,10) + '.png');
+    Utils.toast('长图已下载', 'success');
+  });
+
+  container.querySelector('#lsCopy').addEventListener('click', async () => {
+    if (!resultBlob) return;
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': resultBlob })]);
+      Utils.toast('已复制到剪贴板', 'success');
+    } catch(e) {
+      const u = URL.createObjectURL(resultBlob);
+      const a = document.createElement('a');
+      a.href = u; a.download = '长截图.png'; a.click();
+      URL.revokeObjectURL(u);
+      Utils.toast('已触发保存', 'success');
+    }
+  });
+
+  function resetAll() {
+    images = [];
+    overlapResults = [];
+    manualOverlaps = [];
+    resultBlob = null;
+    draggingIdx = -1;
+    dropZone.classList.remove('hidden');
+    imageList.classList.add('hidden');
+    optsDiv.classList.add('hidden');
+    actions.classList.add('hidden');
+    manualArea.classList.add('hidden');
+    resultArea.classList.add('hidden');
+    progress.classList.add('hidden');
+    progressText.classList.add('hidden');
+  }
 }
 
 function Tool_long_screenshot_deactivate() {}
