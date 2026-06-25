@@ -29,7 +29,7 @@ const ToolSections = [
     cat: 'utility',
     color: 'util',
     tools: [
-      { id:'label-gen',   name:'克欧克标签制作', icon:'label_gen',  desc:'产品标签自动生成，支持条形码、多品牌' },
+      { id:'label-gen',   name:'克欧克标签制作', icon:'label_gen',  desc:'产品标签自动生成，支持条形码、多品牌', external: true },
       { id:'qrcode-gen',  name:'二维码生成',   icon:'qrcode_gen',   desc:'生成自定义二维码' },
       { id:'qrcode-scan', name:'二维码识别',   icon:'qrcode_scan',   desc:'扫描或上传图片识别二维码内容' },
       { id:'markdown',    name:'Markdown 预览',icon:'markdown',      desc:'编辑并实时预览 Markdown' },
@@ -140,6 +140,11 @@ const OfficeToolkit = {
   activateTool(toolId) {
     const tool = AllTools.find(t => t.id === toolId);
     if (!tool) return;
+
+    if (tool.external) {
+      window.location.href = 'label-generator.html';
+      return;
+    }
 
     this.currentTool = tool;
     document.getElementById('cardsGrid').classList.add('hidden');
