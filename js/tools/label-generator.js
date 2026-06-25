@@ -2,8 +2,8 @@
 function Tool_label_gen(container) {
   // ===== CSS =====
   var style = document.createElement("style");
-  style.textContent = `*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
+  style.textContent = `.labelgen-scope *, .labelgen-scope *::before, .labelgen-scope *::after { box-sizing: border-box; margin: 0; padding: 0; }
+.labelgen-scope {
   --bg: #f9fafb;
   --card-bg: #ffffff;
   --border: #e5e7eb;
@@ -22,14 +22,14 @@ function Tool_label_gen(container) {
   --radius-lg: 0.625rem;
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
-body {
+.labelgen-scope {
   font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   background: var(--bg);
   color: var(--text-primary);
   min-height: 100vh;
   line-height: 1.5;
 }
-.container { max-width: 1280px; margin: 0 auto; padding: 1rem; }
+.labelgen-scope .container { max-width: 1280px; margin: 0 auto; padding: 1rem; }
 @media (min-width: 768px) { .container { padding: 2rem; } }
 
 .header { text-align: center; margin-bottom: 2rem; }
@@ -39,7 +39,7 @@ body {
 .main-grid { display: grid; gap: 1.5rem; }
 @media (min-width: 1024px) { .main-grid { grid-template-columns: 1fr 1fr; } }
 
-.card {
+.labelgen-scope .card {
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -47,14 +47,14 @@ body {
   display: flex; flex-direction: column; gap: 1.5rem;
   padding: 1.5rem;
 }
-.card-header { display: flex; flex-direction: column; gap: 0.25rem; }
-.card-title { font-weight: 600; font-size: 1.05rem; line-height: 1; }
-.card-desc { color: var(--text-secondary); font-size: 0.875rem; }
+.labelgen-scope .card-header { display: flex; flex-direction: column; gap: 0.25rem; }
+.labelgen-scope .card-title { font-weight: 600; font-size: 1.05rem; line-height: 1; }
+.labelgen-scope .card-desc { color: var(--text-secondary); font-size: 0.875rem; }
 
-.form-group { display: flex; flex-direction: column; gap: 0.5rem; }
-.form-label { font-size: 0.875rem; font-weight: 500; line-height: 1; }
+.labelgen-scope .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
+.labelgen-scope .form-label { font-size: 0.875rem; font-weight: 500; line-height: 1; }
 
-.form-input, .form-select, .form-textarea {
+.labelgen-scope .form-input, .form-select, .form-textarea {
   height: 2.25rem; padding: 0 0.75rem;
   font-size: 0.875rem; font-family: inherit;
   background: transparent; border: 1px solid var(--border);
@@ -62,59 +62,60 @@ body {
   outline: none; transition: border-color 0.15s, box-shadow 0.15s;
   width: 100%; min-width: 0;
 }
-.form-input:focus, .form-select:focus, .form-textarea:focus {
+.labelgen-scope .form-input:focus, .form-select:focus, .form-textarea:focus {
   border-color: #2563eb;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
-.form-select {
+.labelgen-scope .form-select {
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat; background-position: right 0.75rem center;
   padding-right: 2rem; cursor: pointer;
 }
-.form-textarea { height: auto; min-height: 2.25rem; padding: 0.5rem 0.75rem; resize: vertical; }
-.form-textarea.rows-3 { min-height: 5rem; }
+.labelgen-scope .form-textarea { height: auto; min-height: 2.25rem; padding: 0.5rem 0.75rem; resize: vertical; }
+.labelgen-scope .form-textarea.rows-3 { min-height: 5rem; }
 
-.form-grid { display: grid; gap: 1rem; }
-.form-grid-2 { grid-template-columns: 1fr 1fr; }
-.form-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+.labelgen-scope .form-grid { display: grid; gap: 1rem; }
+.labelgen-scope .form-grid-2 { grid-template-columns: 1fr 1fr; }
+.labelgen-scope .form-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
 
-.section-blue { background: var(--blue-50); border-radius: var(--radius-sm); padding: 1rem; }
-.section-purple { background: var(--purple-50); border-radius: var(--radius-sm); padding: 1rem; }
-.section-gray { background: var(--gray-50); border-radius: var(--radius-sm); padding: 0.75rem; }
+.labelgen-scope .section-blue { background: var(--blue-50); border-radius: var(--radius-sm); padding: 1rem; }
+.labelgen-scope .section-purple { background: var(--purple-50); border-radius: var(--radius-sm); padding: 1rem; }
+.labelgen-scope .section-gray { background: var(--gray-50); border-radius: var(--radius-sm); padding: 0.75rem; }
 
-.btn-group { display: flex; gap: 0.5rem; }
-.btn {
+.labelgen-scope .btn-group { display: flex; gap: 0.5rem; }
+.labelgen-scope .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
   height: 2.25rem; padding: 0 1rem;
   font-size: 0.875rem; font-weight: 500; font-family: inherit;
   border-radius: var(--radius-sm); border: 1px solid transparent;
   cursor: pointer; transition: all 0.15s;
 }
-.btn-primary { background: var(--primary); color: var(--primary-fg); flex: 1; }
-.btn-primary:hover { background: #333; }
-.btn-outline { background: var(--card-bg); border-color: var(--border); color: var(--text-primary); }
-.btn-outline:hover { background: #f9fafb; border-color: #d1d5db; }
+.labelgen-scope .btn-primary { background: var(--primary); color: var(--primary-fg); flex: 1; }
+.labelgen-scope .btn-primary:hover { background: #333; }
+.labelgen-scope .btn-outline { background: var(--card-bg); border-color: var(--border); color: var(--text-primary); }
+.labelgen-scope .btn-outline:hover { background: #f9fafb; border-color: #d1d5db; }
 
-.preview-container {
+.labelgen-scope .preview-container {
   display: flex; justify-content: center;
   border: 2px dashed #d1d5db;
   border-radius: var(--radius-sm); padding: 1rem; background: white;
 }
-.preview-container canvas { max-width: 100%; height: auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+.labelgen-scope .preview-container canvas { max-width: 100%; height: auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
 
-.size-hint { text-align: center; font-size: 0.875rem; color: var(--text-muted); margin-top: 1rem; }
+.labelgen-scope .size-hint { text-align: center; font-size: 0.875rem; color: var(--text-muted); margin-top: 1rem; }
 
 @media (max-width: 639px) {
   .form-grid-2, .form-grid-3 { grid-template-columns: 1fr; }
 }
 
-.hidden { display: none !important; }
-.form-input-barcode { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; letter-spacing: 0.05em; }`;
+.labelgen-scope .hidden { display: none !important; }
+.labelgen-scope .form-input-barcode { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; letter-spacing: 0.05em; }`;
   container.appendChild(style);
 
   // ===== HTML Template =====
-  container.innerHTML = `<div class="container">
+  container.innerHTML = `<div class="labelgen-scope">
+<div class="container">
   <div class="header">
     <h1>产品标签自动定制系统</h1>
     <p>填写产品信息，自动生成符合规范的标签图片</p>
