@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#4F46E5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="办公工具箱">
+  <title>本地办公工具箱</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+  <!-- All libraries loaded locally, no CDN dependency -->
+  <script src="lib/pdf-lib.min.js"></script>
+  <script src="lib/pdf.min.js"></script>
+  <script src="lib/mammoth.browser.min.js"></script>
+  <script src="lib/html2canvas.min.js"></script>
+  <script src="lib/jsQR.js"></script>
+  <script src="lib/qrcode.min.js"></script>
+  <script src="lib/marked.min.js"></script>
+  <script src="lib/browser-image-compression.js"></script>
+</head>
+<body>
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="logo">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+          <polyline points="10 9 9 9 8 9"/>
+        </svg>
+        <span>本地办公工具箱</span>
+      </div>
+      <button class="theme-toggle" id="themeToggle" title="切换深色模式">
+        <svg class="icon-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+        <svg class="icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      </button>
+      <button class="info-btn" id="infoBtn" title="关于">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Tab Navigation -->
+  <nav class="tab-nav" id="tabNav">
+    <button class="tab-btn active" data-category="pdf">📄 PDF 工具</button>
+    <button class="tab-btn" data-category="image">🖼️ 图片工具</button>
+    <button class="tab-btn" data-category="scan">📷 扫描 & OCR</button>
+    <button class="tab-btn" data-category="utility">🔧 实用工具</button>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content" id="mainContent">
+    <div class="cards-grid" id="cardsGrid"></div>
+    <div class="tool-workspace hidden" id="toolWorkspace">
+      <button class="back-btn" id="backBtn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        返回
+      </button>
+      <div class="tool-container" id="toolContainer"></div>
+    </div>
+  </main>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- About Modal -->
+  <div class="modal-overlay hidden" id="aboutModal">
+    <div class="modal-content">
+      <h2>关于本地办公工具箱</h2>
+      <p>纯前端本地运行，所有数据不上传服务器。</p>
+      <p>替代 WPS / 夸克 中常见的付费功能。</p>
+      <div class="feature-list">
+        <span>✅ PDF 合并/拆分/加密</span>
+        <span>✅ PDF 压缩（快速/深度）</span>
+        <span>✅ 图片压缩/抠图/转换</span>
+        <span>✅ 扫描增强/OCR</span>
+        <span>✅ Word 转 PDF</span>
+        <span>✅ 二维码/Markdown</span>
+      </div>
+      <p class="version-text">v1.1 · 完全离线可用 · 纯前端</p>
+      <button class="btn btn-primary modal-close">关闭</button>
+    </div>
+  </div>
+
+  <!-- Core Scripts -->
+  <script src="js/utils.js"></script>
+  <script src="js/router.js"></script>
+  <script src="js/tools/pdf-merge.js"></script>
+  <script src="js/tools/pdf-split.js"></script>
+  <script src="js/tools/pdf-extract.js"></script>
+  <script src="js/tools/pdf-reorder.js"></script>
+  <script src="js/tools/pdf-encrypt.js"></script>
+  <script src="js/tools/pdf-compress.js"></script>
+  <script src="js/tools/img2pdf.js"></script>
+  <script src="js/tools/word2pdf.js"></script>
+  <script src="js/tools/img-compress.js"></script>
+  <script src="js/tools/img-convert.js"></script>
+  <script src="js/tools/bg-remove.js"></script>
+  <script src="js/tools/img-crop.js"></script>
+  <script src="js/tools/scanner.js"></script>
+  <script src="js/tools/ocr.js"></script>
+  <script src="js/tools/qrcode-gen.js"></script>
+  <script src="js/tools/qrcode-scan.js"></script>
+  <script src="js/tools/markdown.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      OfficeToolkit.init();
+    });
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>
