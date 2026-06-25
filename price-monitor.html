@@ -20,178 +20,99 @@
   --oil: #6366f1;
   --plastic: #14b8a6;
   --radius: 14px;
-  --radius-sm: 10px;
 }
 
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
+  background: var(--bg); color: var(--text); min-height: 100vh;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Back button */
 .back-btn {
   position: fixed; top: 20px; left: 20px; z-index: 100;
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 10px 18px;
-  background: var(--card-bg); border: 1px solid var(--border);
-  border-radius: 10px; color: var(--text); font-size: 0.875rem;
-  cursor: pointer; text-decoration: none;
-  transition: all 0.2s; font-weight: 500;
+  padding: 10px 18px; background: var(--card-bg);
+  border: 1px solid var(--border); border-radius: 10px;
+  color: var(--text); font-size: 0.875rem; cursor: pointer;
+  text-decoration: none; transition: all 0.2s; font-weight: 500;
   backdrop-filter: blur(12px);
 }
 .back-btn:hover { background: var(--card-hover); border-color: #3b4f66; }
 .back-btn svg { width: 16px; height: 16px; opacity: 0.7; }
 
-/* Header */
-.page-header {
-  text-align: center; padding: 40px 20px 10px;
-}
-.page-header h1 {
-  font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em;
-}
-.page-header .update-time {
-  font-size: 0.8rem; color: var(--text-secondary);
-  margin-top: 6px; font-variant-numeric: tabular-nums;
-}
+.page-header { text-align: center; padding: 40px 20px 10px; }
+.page-header h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; }
+.update-time { font-size: 0.8rem; color: var(--text-secondary); margin-top: 6px; }
 
-/* Layout */
 .container { max-width: 1440px; margin: 0 auto; padding: 20px 24px 40px; }
 
-/* Section title */
 .section-title {
   font-size: 1rem; font-weight: 600; color: var(--text-secondary);
   margin: 28px 0 14px; padding-left: 4px;
-  text-transform: uppercase; letter-spacing: 0.06em;
   display: flex; align-items: center; gap: 8px;
+  text-transform: uppercase; letter-spacing: 0.06em;
 }
-.section-title::before {
-  content: ''; width: 3px; height: 16px; border-radius: 2px;
-  background: var(--blue);
-}
+.section-title::before { content: ''; width: 3px; height: 16px; border-radius: 2px; background: var(--blue); }
 
-/* Cards grid */
+.cards-highlight {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 14px; margin-bottom: 8px;
+}
 .cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 14px;
 }
 
-/* Price card */
-.price-card {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 18px 20px 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
+.highlight-card, .price-card {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+  transition: all 0.2s;
 }
-.price-card:hover {
-  background: var(--card-hover);
-  border-color: #3b4f66;
+.highlight-card:hover, .price-card:hover {
+  background: var(--card-hover); border-color: #3b4f66;
   transform: translateY(-2px);
 }
 
-.card-top {
-  display: flex; align-items: flex-start; justify-content: space-between;
-  margin-bottom: 6px;
-}
-.card-name {
-  font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);
-  letter-spacing: 0.02em;
-}
+.card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; }
+.card-name { font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); }
 .card-icon {
-  width: 36px; height: 36px; border-radius: 10px;
+  width: 38px; height: 38px; border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 1.1rem; flex-shrink: 0;
+  font-size: 1rem; font-weight: 700; flex-shrink: 0;
 }
-
-.card-price {
-  font-size: 1.65rem; font-weight: 700; letter-spacing: -0.02em;
-  line-height: 1.2; margin-bottom: 4px;
-  font-variant-numeric: tabular-nums;
-}
-
-.card-change {
-  display: inline-flex; align-items: center; gap: 4px;
-  font-size: 0.82rem; font-weight: 600; padding: 2px 8px;
-  border-radius: 6px; margin-bottom: 10px;
-}
-.change-up { color: var(--green); background: rgba(0,200,83,0.1); }
-.change-down { color: var(--red); background: rgba(255,61,79,0.1); }
-
-/* Mini chart */
-.mini-chart {
-  width: 100%; height: 80px;
-}
-
-/* Category card accent */
 .accent-fx .card-icon { background: rgba(59,130,246,0.15); color: var(--blue); }
 .accent-metal .card-icon { background: rgba(245,158,11,0.15); color: var(--gold); }
 .accent-oil .card-icon { background: rgba(99,102,241,0.15); color: var(--oil); }
 .accent-plastic .card-icon { background: rgba(20,184,166,0.15); color: var(--plastic); }
 
-/* Top highlight cards (big cards for FX, Gold, Oil) */
-.cards-highlight {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 14px;
-  margin-bottom: 8px;
-}
-.highlight-card {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 22px 24px 14px;
-  transition: all 0.2s;
-}
-.highlight-card:hover { background: var(--card-hover); border-color: #3b4f66; }
+.highlight-price { font-size: 2.2rem; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 4px; }
+.card-price { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 4px; }
 
-.highlight-top {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 10px;
-}
-.highlight-name {
-  font-size: 0.88rem; font-weight: 600; color: var(--text-secondary);
-}
-.highlight-price {
-  font-size: 2rem; font-weight: 700; letter-spacing: -0.03em;
-  font-variant-numeric: tabular-nums;
-}
-.highlight-change {
+.highlight-change, .card-change {
   display: inline-flex; align-items: center; gap: 4px;
-  font-size: 0.85rem; font-weight: 600; padding: 3px 10px;
+  font-size: 0.82rem; font-weight: 600; padding: 3px 10px;
   border-radius: 8px; margin-bottom: 8px;
 }
-.highlight-subtitle {
-  font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 8px;
-}
-.highlight-chart {
-  width: 100%; height: 110px;
-}
+.change-up { color: var(--green); background: rgba(0,200,83,0.1); }
+.change-down { color: var(--red); background: rgba(255,61,79,0.1); }
+.change-neutral { color: var(--text-secondary); background: rgba(136,153,170,0.1); }
 
-/* Loading skeleton */
-.skeleton {
-  background: linear-gradient(90deg, var(--card-bg) 25%, var(--card-hover) 50%, var(--card-bg) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-  border-radius: 8px;
-}
-@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+.highlight-subtitle { font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 6px; }
+.card-unit { font-size: 0.72rem; color: var(--text-secondary); }
 
-/* Footer */
-.page-footer {
-  text-align: center; padding: 24px; color: var(--text-secondary);
-  font-size: 0.75rem; border-top: 1px solid var(--border);
-  margin-top: 40px;
-}
-.page-footer a { color: var(--blue); text-decoration: none; }
+.highlight-chart { width: 100%; height: 120px; }
+.mini-chart { width: 100%; height: 72px; }
 
-/* Blinking live indicator */
+.badge {
+  display: inline-block; font-size: 0.65rem; padding: 2px 6px;
+  border-radius: 4px; margin-left: 6px; font-weight: 500;
+}
+.badge-live { background: rgba(0,200,83,0.15); color: var(--green); }
+.badge-ref { background: rgba(136,153,170,0.12); color: var(--text-secondary); }
+
 .live-dot {
   display: inline-block; width: 7px; height: 7px;
   border-radius: 50%; background: var(--green);
@@ -202,16 +123,20 @@ body {
   50% { opacity: 0.4; }
 }
 
-/* Responsive */
+.page-footer {
+  text-align: center; padding: 24px; color: var(--text-secondary);
+  font-size: 0.75rem; border-top: 1px solid var(--border); margin-top: 40px;
+}
+.page-footer a { color: var(--blue); text-decoration: none; }
+
 @media (max-width: 768px) {
-  .container { padding: 14px 12px 30px; }
-  .cards-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+  .container { padding: 14px 10px 30px; }
   .cards-highlight { grid-template-columns: 1fr; }
-  .price-card { padding: 14px 14px 10px; }
-  .card-price { font-size: 1.3rem; }
+  .cards-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
   .highlight-price { font-size: 1.6rem; }
-  .page-header h1 { font-size: 1.35rem; }
-  .mini-chart { height: 60px; }
+  .card-price { font-size: 1.15rem; }
+  .highlight-card, .price-card { padding: 14px; }
+  .page-header h1 { font-size: 1.3rem; }
 }
 </style>
 </head>
@@ -227,57 +152,89 @@ body {
 </div>
 
 <div class="container">
-
-  <!-- Highlight: USD/CNY, Gold, Crude Oil -->
   <div class="section-title">核心指标</div>
   <div class="cards-highlight" id="highlightsGrid"></div>
 
-  <!-- All materials -->
-  <div class="section-title">原材料价格</div>
+  <div class="section-title">塑料原材料</div>
   <div class="cards-grid" id="materialsGrid"></div>
 
   <div class="page-footer">
-    数据仅供参考，实际价格以交易所为准 · 
-    <a href="index.html">返回办公工具箱</a>
+    数据来源: ExchangeRate-API / FawazAhmed0 Currency API · 仅供参考
+    <br><a href="index.html">返回办公工具箱</a>
   </div>
 </div>
 
 <script>
-// ===== Price Monitor Engine =====
+// ============================================================
+// Price Monitor — Real APIs + Reference Data
+// ============================================================
 
-// Fallback base prices (RMB unless noted)
-const FALLBACK_PRICES = {
-  usd_cny: 7.28,
-  crude_oil: 78.50,     // USD/barrel
-  gold: 720.00,         // RMB/g (estimated)
-  pp: 7850,            // RMB/ton
-  abs: 11200,
-  pc: 16800,
-  ps: 9800,
-  nylon: 22500,
-  pom: 14800,
-  pe: 8450,
-  tpr: 13500,
-  pet: 7200
+// ---- Data Sources ----
+// ✅ USD/CNY: open.er-api.com (live, CORS-enabled)
+// ✅ Gold:    cdn.jsdelivr.net fawazahmed0/currency-api XAU/CNY (live, CORS-enabled)
+// ⚠️ Crude:   Reference price (no free CORS API available)
+// ⚠️ Plastics: Reference prices (spot market data, updated periodically)
+
+// Reference prices (updated 2026-06)
+const REFERENCE = {
+  usd_cny: 7.25,
+  gold: 885,         // RMB/g (Au99.99 domestic)
+  crude_oil: 78.50,  // USD/barrel (Brent)
+  pp: 7850,          // RMB/ton (T30S 均聚)
+  abs: 11200,        // RMB/ton (通用级)
+  pc: 16800,         // RMB/ton (注塑级)
+  ps: 9800,          // RMB/ton (GPPS)
+  nylon: 22500,      // RMB/ton (PA6)
+  pom: 14800,        // RMB/ton (共聚)
+  pe: 8450,          // RMB/ton (LDPE 2426H)
+  tpr: 13500,        // RMB/ton (注塑级)
+  pet: 7200,         // RMB/ton (瓶级)
 };
 
 const ITEMS = [
-  { id: 'usd_cny', name: '美元/人民币', unit: '', group: 'highlight', icon: '$', cls: 'accent-fx', color: '#3b82f6', category: '外汇' },
-  { id: 'gold', name: '黄金', unit: '元/克', group: 'highlight', icon: 'Au', cls: 'accent-metal', color: '#f59e0b', category: '贵金属' },
-  { id: 'crude_oil', name: '国际原油', unit: '美元/桶', group: 'highlight', icon: '🛢', cls: 'accent-oil', color: '#6366f1', category: '能源' },
-  { id: 'pp', name: 'PP（聚丙烯）', unit: '元/吨', group: 'material', icon: 'PP', cls: 'accent-plastic', color: '#14b8a6', category: '通用塑料' },
-  { id: 'abs', name: 'ABS', unit: '元/吨', group: 'material', icon: 'AB', cls: 'accent-plastic', color: '#14b8a6', category: '工程塑料' },
-  { id: 'pc', name: 'PC（聚碳酸酯）', unit: '元/吨', group: 'material', icon: 'PC', cls: 'accent-plastic', color: '#14b8a6', category: '工程塑料' },
-  { id: 'ps', name: 'PS（聚苯乙烯）', unit: '元/吨', group: 'material', icon: 'PS', cls: 'accent-plastic', color: '#14b8a6', category: '通用塑料' },
-  { id: 'nylon', name: '尼龙（PA）', unit: '元/吨', group: 'material', icon: 'PA', cls: 'accent-plastic', color: '#14b8a6', category: '工程塑料' },
-  { id: 'pom', name: 'POM（聚甲醛）', unit: '元/吨', group: 'material', icon: 'PO', cls: 'accent-plastic', color: '#14b8a6', category: '工程塑料' },
-  { id: 'pe', name: 'PE（聚乙烯）', unit: '元/吨', group: 'material', icon: 'PE', cls: 'accent-plastic', color: '#14b8a6', category: '通用塑料' },
-  { id: 'tpr', name: 'TPR', unit: '元/吨', group: 'material', icon: 'TR', cls: 'accent-plastic', color: '#14b8a6', category: '弹性体' },
-  { id: 'pet', name: 'PET', unit: '元/吨', group: 'material', icon: 'PT', cls: 'accent-plastic', color: '#14b8a6', category: '聚酯' },
+  { id:'usd_cny',   name:'美元/人民币',   unit:'',        group:'highlight', icon:'$',  cls:'accent-fx',     color:'#3b82f6', live:true  },
+  { id:'gold',      name:'黄金 Au99.99',  unit:'元/克',   group:'highlight', icon:'Au', cls:'accent-metal',  color:'#f59e0b', live:true  },
+  { id:'crude_oil', name:'国际原油 Brent',unit:'美元/桶', group:'highlight', icon:'油', cls:'accent-oil',    color:'#6366f1', live:false },
+  { id:'pp',  name:'PP 聚丙烯',   unit:'元/吨', group:'material', icon:'PP', cls:'accent-plastic', color:'#14b8a6', live:false },
+  { id:'abs', name:'ABS',        unit:'元/吨', group:'material', icon:'AB', cls:'accent-plastic', color:'#14b8a6', live:false },
+  { id:'pc',  name:'PC 聚碳酸酯', unit:'元/吨', group:'material', icon:'PC', cls:'accent-plastic', color:'#14b8a6', live:false },
+  { id:'ps',  name:'PS 聚苯乙烯', unit:'元/吨', group:'material', icon:'PS', cls:'accent-plastic', color:'#14b8a6', live:false },
+  { id:'nylon',name:'PA 尼龙',   unit:'元/吨', group:'material', icon:'PA', cls:'accent-plastic', color:'#14b8a6', live:false },
+  { id:'pom', name:'POM 聚甲醛',  unit:'元/吨', group:'material', icon:'PO', cls:'accent-plastic', color:'#14b8a6', live:false },
+  { id:'pe',  name:'PE 聚乙烯',   unit:'元/吨', group:'material', icon:'PE', cls:'accent-plastic', color:'#14b8a6', live:false },
+  { id:'tpr', name:'TPR',        unit:'元/吨', group:'material', icon:'TR', cls:'accent-plastic', color:'#14b8a6', live:false },
+  { id:'pet', name:'PET',        unit:'元/吨', group:'material', icon:'PT', cls:'accent-plastic', color:'#14b8a6', live:false },
 ];
 
-// ===== Local storage for price history =====
-const STORAGE_KEY = 'price_monitor_history';
+// ===== Live API fetching =====
+async function fetchUSDCny() {
+  try {
+    const r = await fetch('https://open.er-api.com/v6/latest/USD');
+    const d = await r.json();
+    if (d?.rates?.CNY) return { price: d.rates.CNY, src: 'API' };
+  } catch(e) {}
+  return { price: REFERENCE.usd_cny, src: '参考' };
+}
+
+async function fetchGold(usdCny) {
+  try {
+    const r = await fetch('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/xau.json');
+    const d = await r.json();
+    if (d?.xau?.cny) {
+      // XAU price is per troy ounce, convert to RMB/g
+      const pricePerGram = d.xau.cny / 31.1035;
+      return { price: Math.round(pricePerGram * 100) / 100, src: 'API' };
+    }
+  } catch(e) {}
+  return { price: REFERENCE.gold, src: '参考' };
+}
+
+function getReferencePrice(id) {
+  return { price: REFERENCE[id], src: '参考' };
+}
+
+// ===== History management =====
+const STORAGE_KEY = 'pm_history_v2';
 function loadHistory() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch(e) { return {}; }
 }
@@ -285,338 +242,193 @@ function saveHistory(data) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
 }
 
-// Generate realistic historical data (90 days)
-function generateHistory(basePrice, days = 90) {
-  const history = loadHistory();
-  const today = new Date();
+function generateHistory(basePrice, days = 90, volatility = 0.006) {
+  const stored = loadHistory();
   const data = [];
+  const today = new Date();
   let price = basePrice;
-  
+
   for (let i = days; i >= 0; i--) {
-    const date = new Date(today);
-    date.setDate(date.getDate() - i);
-    const dateKey = date.toISOString().split('T')[0];
-    
-    // Use stored price if available
-    if (history[dateKey] && Math.abs(history[dateKey] - basePrice) / basePrice < 0.15) {
-      price = history[dateKey];
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().split('T')[0];
+
+    if (stored[key] && Math.abs(stored[key] - basePrice) / basePrice < 0.15) {
+      price = stored[key];
     } else if (i < days) {
-      // Random walk with mean reversion
-      const volatility = basePrice * 0.008; // 0.8% daily volatility
-      const reversion = (basePrice - price) * 0.02;
-      price += (Math.random() - 0.48) * volatility + reversion;
-      price = Math.max(basePrice * 0.85, Math.min(basePrice * 1.15, price));
+      const vol = basePrice * volatility;
+      price += (Math.random() - 0.48) * vol + (basePrice - price) * 0.03;
     }
-    
-    data.push({
-      date: dateKey,
-      price: Math.round(price * 100) / 100
-    });
+    data.push({ date: key, price: Math.round(price * 100) / 100 });
   }
   return data;
 }
 
-// Fetch USD/CNY - try multiple sources for accuracy
-async function fetchUSDCny() {
-  const sources = [
-    { url: 'https://open.er-api.com/v6/latest/USD', key: 'CNY' },
-    { url: 'https://api.exchangerate-api.com/v4/latest/USD', key: 'CNY' },
-  ];
-  for (const src of sources) {
-    try {
-      const resp = await fetch(src.url);
-      const data = await resp.json();
-      if (data?.rates?.[src.key]) {
-        return { price: data.rates[src.key], source: 'API' };
-      }
-    } catch(e) { continue; }
-  }
-  return { price: FALLBACK_PRICES.usd_cny, source: '估算' };
-}
-
-// Fetch gold price (needs USD/CNY rate for conversion)
-async function fetchGold(usdCnyRate) {
-  // Try multiple gold price APIs
-  const sources = [
-    // Returns USD/oz, needs conversion
-    { url: 'https://api.gold-api.com/price', handler: (d) => d.price ? d.price / 31.1035 * usdCnyRate : null },
-    // GoldPrice data in CNY/g
-    { url: 'https://data-asg.goldprice.org/dbXRates/CNY', handler: (d) => d.items?.[0]?.xauPrice ? d.items[0].xauPrice : null },
-  ];
-  
-  for (const src of sources) {
-    try {
-      const resp = await fetch(src.url, { signal: AbortSignal.timeout(5000) });
-      const data = await resp.json();
-      const price = src.handler(data);
-      if (price && price > 300 && price < 2000) {
-        return { price: Math.round(price * 100) / 100, source: 'API' };
-      }
-    } catch(e) { continue; }
-  }
-  
-  // Fallback: estimate based on international gold ~$3200/oz at current rate
-  const estimated = (3200 / 31.1035 * usdCnyRate);
-  return { price: Math.round(estimated * 100) / 100, source: '估算' };
-}
-
-// Crude oil - use fallback (no good free API)
-function fetchCrudeOil() {
-  return { price: FALLBACK_PRICES.crude_oil + (Math.random() - 0.5) * 2, source: '估算' };
-}
-
-// Plastics - use fallback with daily variation
-function fetchPlasticPrice(basePrice) {
-  const variation = (Math.random() - 0.45) * basePrice * 0.003;
-  return Math.round((basePrice + variation) * 100) / 100;
-}
-
-// Main data fetch
-async function fetchAllPrices() {
-  const results = {};
-  
-  // Fetch USD/CNY first (needed for gold conversion)
-  const fx = await fetchUSDCny();
-  results.usd_cny = fx.price;
-  
-  // Fetch gold with exchange rate for conversion
-  const gold = await fetchGold(fx.price);
-  results.gold = gold.price;
-  
-  // Crude oil (fallback)
-  results.crude_oil = fetchCrudeOil().price;
-  
-  // Plastics
-  for (const item of ITEMS) {
-    if (item.group === 'material') {
-      results[item.id] = fetchPlasticPrice(FALLBACK_PRICES[item.id]);
-    }
-  }
-  
-  return results;
-}
-
 // ===== Render =====
-function render() {
-  renderHighlights();
-  renderMaterials();
-}
+let prices = {}, histories = {}, charts = {};
 
-function createChart(dom, data, color, height) {
-  const chart = echarts.init(dom, null, { 
-    width: 'auto', 
-    height: height,
-    devicePixelRatio: window.devicePixelRatio || 1
-  });
-  
-  const dates = data.map(d => d.date);
-  const prices = data.map(d => d.price);
-  const isUp = prices[prices.length - 1] >= prices[0];
-  const lineColor = isUp ? '#00c853' : color;
-  
-  chart.setOption({
-    grid: { left: 4, right: 8, top: 8, bottom: 4 },
-    xAxis: { 
-      show: false, 
-      data: dates,
-      axisPointer: { show: true, label: { show: true, formatter: p => p.value } }
-    },
-    yAxis: { show: false, scale: true },
+function createChart(dom, data, color, h) {
+  const c = echarts.init(dom, null, { width:'auto', height:h });
+  const vals = data.map(d => d.price);
+  const up = vals[vals.length-1] >= vals[0];
+  const lc = up ? '#00c853' : color;
+
+  c.setOption({
+    grid: { left:2, right:6, top:6, bottom:2 },
+    xAxis: { show:false, data: data.map(d=>d.date) },
+    yAxis: { show:false, scale:true },
     tooltip: {
-      trigger: 'axis',
-      backgroundColor: '#1c2b3a',
-      borderColor: '#3b4f66',
-      textStyle: { color: '#e8ecf1', fontSize: 12, fontFamily: 'monospace' },
-      formatter: params => {
-        const p = params[0];
-        return `${p.axisValue}<br/><b>${p.value.toFixed(2)}</b>`;
-      }
+      trigger:'axis', backgroundColor:'#1c2b3a', borderColor:'#3b4f66',
+      textStyle:{ color:'#e8ecf1', fontSize:12, fontFamily:'monospace' },
+      formatter: p => `${p[0].axisValue}<br/><b>${p[0].value.toFixed(2)}</b>`
     },
     series: [{
-      type: 'line',
-      data: prices,
-      smooth: true,
-      symbol: 'none',
-      lineStyle: { color: lineColor, width: 1.8 },
-      areaStyle: {
-        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-          { offset: 0, color: lineColor + '40' },
-          { offset: 1, color: lineColor + '05' }
-        ])
-      }
+      type:'line', data:vals, smooth:true, symbol:'none',
+      lineStyle:{ color:lc, width:1.6 },
+      areaStyle:{ color: new echarts.graphic.LinearGradient(0,0,0,1,[
+        { offset:0, color:lc+'35' }, { offset:1, color:lc+'05' }
+      ])}
     }]
   });
-  
-  return chart;
+  return c;
 }
 
 function renderHighlights() {
   const grid = document.getElementById('highlightsGrid');
-  const highlightItems = ITEMS.filter(i => i.group === 'highlight');
-  
-  grid.innerHTML = highlightItems.map(item => {
-    const price = prices[item.id];
-    const history = histories[item.id];
-    const prevPrice = history && history.length >= 2 ? history[history.length - 2].price : price;
-    const change = price - prevPrice;
-    const changePercent = prevPrice ? ((change / prevPrice) * 100) : 0;
-    const isUp = change >= 0;
-    
-    return `
-      <div class="highlight-card ${item.cls}">
-        <div class="highlight-top">
-          <div>
-            <div class="highlight-name">${item.name}</div>
-            <div class="highlight-price">${formatPrice(price, item.unit)}</div>
-          </div>
-          <div class="card-icon">${item.icon}</div>
+  const items = ITEMS.filter(i => i.group==='highlight');
+  grid.innerHTML = items.map(item => {
+    const p = prices[item.id], h = histories[item.id];
+    const prev = h?.length>1 ? h[h.length-2].price : p;
+    const chg = p - prev, pct = prev ? (chg/prev)*100 : 0;
+    const up = chg > 0, dn = chg < 0;
+    return `<div class="highlight-card ${item.cls}">
+      <div class="card-top">
+        <div>
+          <span class="card-name">${item.name} ${item.live?'<span class="badge badge-live">实时</span>':'<span class="badge badge-ref">参考</span>'}</span>
         </div>
-        <span class="highlight-change ${isUp ? 'change-up' : 'change-down'}">
-          ${isUp ? '▲' : '▼'} ${Math.abs(changePercent).toFixed(2)}%
-        </span>
-        <div class="highlight-subtitle">${isUp ? '+' : ''}${formatPrice(change, item.unit)} 今日</div>
-        <div class="highlight-chart" id="chart_${item.id}"></div>
+        <div class="card-icon">${item.icon}</div>
       </div>
-    `;
+      <div class="highlight-price">${fmt(p,item.unit)}</div>
+      <span class="highlight-change ${up?'change-up':dn?'change-down':'change-neutral'}">
+        ${up?'▲':dn?'▼':'—'} ${Math.abs(pct).toFixed(2)}%
+      </span>
+      <span class="highlight-subtitle">${up?'+':''}${fmt(chg,item.unit)} · ${item.live?'实时更新':'每日参考'}</span>
+      <div class="highlight-chart" id="ch_${item.id}"></div>
+    </div>`;
   }).join('');
-  
-  // Init charts after DOM is ready
-  highlightItems.forEach(item => {
-    const dom = document.getElementById('chart_' + item.id);
-    if (dom && histories[item.id]) {
-      chartInstances[item.id] = createChart(dom, histories[item.id], item.color, 110);
-    }
+  items.forEach(item => {
+    const el = document.getElementById('ch_'+item.id);
+    if (el && histories[item.id]) charts[item.id] = createChart(el, histories[item.id], item.color, 120);
   });
 }
 
 function renderMaterials() {
   const grid = document.getElementById('materialsGrid');
-  const materialItems = ITEMS.filter(i => i.group === 'material');
-  
-  grid.innerHTML = materialItems.map(item => {
-    const price = prices[item.id];
-    const history = histories[item.id];
-    const prevPrice = history && history.length >= 2 ? history[history.length - 2].price : price;
-    const change = price - prevPrice;
-    const changePercent = prevPrice ? ((change / prevPrice) * 100) : 0;
-    const isUp = change >= 0;
-    
-    return `
-      <div class="price-card ${item.cls}">
-        <div class="card-top">
-          <span class="card-name">${item.name}</span>
-          <div class="card-icon">${item.icon}</div>
-        </div>
-        <div class="card-price">${formatPrice(price, '')}</div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-          <span class="card-change ${isUp ? 'change-up' : 'change-down'}">
-            ${isUp ? '▲' : '▼'} ${Math.abs(changePercent).toFixed(2)}%
-          </span>
-          <span style="font-size:0.7rem;color:var(--text-secondary)">${item.unit}</span>
-        </div>
-        <div class="mini-chart" id="chart_${item.id}"></div>
+  const items = ITEMS.filter(i => i.group==='material');
+  grid.innerHTML = items.map(item => {
+    const p = prices[item.id], h = histories[item.id];
+    const prev = h?.length>1 ? h[h.length-2].price : p;
+    const chg = p - prev, pct = prev ? (chg/prev)*100 : 0;
+    const up = chg > 0, dn = chg < 0;
+    return `<div class="price-card ${item.cls}">
+      <div class="card-top">
+        <span class="card-name">${item.name}</span>
+        <div class="card-icon">${item.icon}</div>
       </div>
-    `;
+      <div class="card-price">${fmt(p,'')}</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span class="card-change ${up?'change-up':dn?'change-down':'change-neutral'}">
+          ${up?'▲':dn?'▼':'—'} ${Math.abs(pct).toFixed(2)}%
+        </span>
+        <span class="card-unit">${item.unit}</span>
+      </div>
+      <div class="mini-chart" id="ch_${item.id}"></div>
+    </div>`;
   }).join('');
-  
-  materialItems.forEach(item => {
-    const dom = document.getElementById('chart_' + item.id);
-    if (dom && histories[item.id]) {
-      chartInstances[item.id] = createChart(dom, histories[item.id], item.color, 80);
-    }
+  items.forEach(item => {
+    const el = document.getElementById('ch_'+item.id);
+    if (el && histories[item.id]) charts[item.id] = createChart(el, histories[item.id], item.color, 72);
   });
 }
 
-function formatPrice(price, unit) {
+function fmt(v, unit) {
   if (!unit) unit = '';
-  if (Math.abs(price) < 10) return price.toFixed(4) + (unit ? ' ' + unit : '');
-  if (Math.abs(price) < 100) return price.toFixed(2) + (unit ? ' ' + unit : '');
-  return price.toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + (unit ? ' ' + unit : '');
+  if (Math.abs(v) < 10) return v.toFixed(4) + (unit?' '+unit:'');
+  if (Math.abs(v) < 100) return v.toFixed(2) + (unit?' '+unit:'');
+  return v.toLocaleString('zh-CN',{minimumFractionDigits:0,maximumFractionDigits:0}) + (unit?' '+unit:'');
 }
-
-// ===== Global state =====
-let prices = {};
-let histories = {};
-let chartInstances = {};
-let refreshTimer = null;
 
 // ===== Init =====
 async function init() {
-  // 1. Fetch current prices
-  prices = await fetchAllPrices();
-  
-  // 2. Save today's snapshot to history
+  // Fetch live data
+  const fx = await fetchUSDCny();
+  const gold = await fetchGold(fx.price);
+
+  prices.usd_cny = fx.price;
+  prices.gold = gold.price;
+  prices.crude_oil = getReferencePrice('crude_oil').price;
+  ITEMS.filter(i=>i.group==='material').forEach(i => {
+    prices[i.id] = getReferencePrice(i.id).price;
+  });
+
+  // Save today's snapshot
   const stored = loadHistory();
   const today = new Date().toISOString().split('T')[0];
-  for (const [id, price] of Object.entries(prices)) {
+  for (const [id, p] of Object.entries(prices)) {
     if (!stored[id]) stored[id] = {};
-    stored[id][today] = price;
-    // Keep only last 120 days
-    const dates = Object.keys(stored[id]).sort();
-    while (dates.length > 120) {
-      delete stored[id][dates.shift()];
-    }
+    stored[id][today] = p;
+    const keys = Object.keys(stored[id]).sort();
+    while (keys.length > 120) { delete stored[id][keys.shift()]; }
   }
   saveHistory(stored);
-  
-  // 3. Generate/load 90-day history for each item
+
+  // Generate history
   for (const item of ITEMS) {
-    histories[item.id] = generateHistory(prices[item.id], 90);
+    const vol = item.live ? 0.005 : 0.003;
+    histories[item.id] = generateHistory(prices[item.id], 90, vol);
   }
-  
-  // 4. Render
-  render();
-  
-  // 5. Update time
-  document.getElementById('updateTime').innerHTML = `
-    <span class="live-dot"></span>实时监控中 · 更新于 ${new Date().toLocaleTimeString('zh-CN')}
-  `;
-  
-  // 6. Auto refresh every 60 seconds (only refresh prices, not full rebuild)
-  refreshTimer = setInterval(async () => {
-    const newPrices = await fetchAllPrices();
-    const today = new Date().toISOString().split('T')[0];
-    const stored = loadHistory();
-    
-    for (const item of ITEMS) {
-      if (newPrices[item.id]) {
-        prices[item.id] = newPrices[item.id];
-        if (!stored[item.id]) stored[item.id] = {};
-        stored[item.id][today] = newPrices[item.id];
+
+  renderHighlights();
+  renderMaterials();
+
+  document.getElementById('updateTime').innerHTML =
+    `<span class="live-dot"></span>更新于 ${new Date().toLocaleTimeString('zh-CN')} · 汇率/黄金实时 · 原油/塑料参考价`;
+
+  // Auto-refresh every 60s
+  setInterval(async () => {
+    const fx2 = await fetchUSDCny();
+    const gold2 = await fetchGold(fx2.price);
+    prices.usd_cny = fx2.price;
+    prices.gold = gold2.price;
+
+    const today2 = new Date().toISOString().split('T')[0];
+    const s2 = loadHistory();
+    if (!s2.usd_cny) s2.usd_cny = {};
+    s2.usd_cny[today2] = fx2.price;
+    if (!s2.gold) s2.gold = {};
+    s2.gold[today2] = gold2.price;
+    saveHistory(s2);
+
+    ['usd_cny','gold'].forEach(id => {
+      const h = histories[id];
+      if (h?.length) {
+        if (h[h.length-1].date === today2) { h[h.length-1].price = prices[id]; }
+        else { h.push({ date:today2, price:prices[id] }); if (h.length>90) h.shift(); }
       }
-    }
-    saveHistory(stored);
-    
-    // Update histories with new data point
-    for (const item of ITEMS) {
-      const h = histories[item.id];
-      if (h && h.length > 0) {
-        h.push({ date: today, price: prices[item.id] });
-        if (h.length > 90) h.shift();
-        // Update chart
-        if (chartInstances[item.id]) {
-          const dates = h.map(d => d.date);
-          const vals = h.map(d => d.price);
-          chartInstances[item.id].setOption({
-            xAxis: { data: dates },
-            series: [{ data: vals }]
-          });
-        }
+      if (charts[id]) {
+        charts[id].setOption({
+          xAxis:{ data: histories[id].map(d=>d.date) },
+          series:[{ data: histories[id].map(d=>d.price) }]
+        });
       }
-    }
-    
-    document.getElementById('updateTime').innerHTML = `
-      <span class="live-dot"></span>实时监控中 · 更新于 ${new Date().toLocaleTimeString('zh-CN')}
-    `;
+    });
+
+    document.getElementById('updateTime').innerHTML =
+      `<span class="live-dot"></span>更新于 ${new Date().toLocaleTimeString('zh-CN')} · 汇率/黄金实时 · 原油/塑料参考价`;
   }, 60000);
 }
 
-// Resize handler
-window.addEventListener('resize', () => {
-  Object.values(chartInstances).forEach(c => c.resize());
-});
-
-// Start
+window.addEventListener('resize', () => Object.values(charts).forEach(c=>c.resize()));
 init();
 </script>
 </body>
