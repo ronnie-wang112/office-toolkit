@@ -17,6 +17,7 @@ const Icons = {
   scanner: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
   qrcode_gen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><line x1="14" y1="14" x2="14" y2="14.01"/><line x1="18" y1="14" x2="18" y2="14.01"/><line x1="14" y1="18" x2="14" y2="18.01"/><line x1="18" y1="18" x2="18" y2="18.01"/></svg>',
   qrcode_scan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>',
+  price_monitor: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>',
   label_gen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>',
   markdown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 8 15 12 7"/><line x1="13" y1="17" x2="21" y2="17"/><line x1="13" y1="13" x2="18" y2="13"/><line x1="18" y1="13" x2="18" y2="17"/></svg>',
 };
@@ -25,10 +26,11 @@ const Icons = {
 const ToolSections = [
   {
     name: '实用工具',
-    desc: '标签制作、二维码、Markdown 预览',
+    desc: '材料价格监控、标签制作、二维码、Markdown 预览',
     cat: 'utility',
     color: 'util',
     tools: [
+      { id:'price-monitor',name:'材料价格监控', icon:'price_monitor',desc:'美元汇率、黄金原油、塑料原材料实时价格与走势', external: true },
       { id:'label-gen',   name:'克欧克标签制作', icon:'label_gen',  desc:'产品标签自动生成，支持条形码、多品牌', external: true },
       { id:'qrcode-gen',  name:'二维码生成',   icon:'qrcode_gen',   desc:'生成自定义二维码' },
       { id:'qrcode-scan', name:'二维码识别',   icon:'qrcode_scan',   desc:'扫描或上传图片识别二维码内容' },
@@ -142,7 +144,11 @@ const OfficeToolkit = {
     if (!tool) return;
 
     if (tool.external) {
-      window.location.href = 'label-generator.html';
+      const externalPages = {
+        'label-gen': 'label-generator.html',
+        'price-monitor': 'price-monitor.html'
+      };
+      window.location.href = externalPages[tool.id] || 'index.html';
       return;
     }
 
