@@ -11,6 +11,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
   <link rel="stylesheet" href="css/style.css">
+  <script src="lib/JsBarcode.all.min.js"></script>
   <script src="lib/pdf-lib.min.js"></script>
   <script src="lib/pdf.min.js"></script>
   <script src="lib/mammoth.browser.min.js"></script>
@@ -65,9 +66,9 @@
         <span>图片压缩/转换/裁剪</span>
         <span>拍照扫描/增强</span>
         <span>Word 转 PDF</span>
-        <span>二维码/Markdown</span>
+        <span>标签制作/二维码/Markdown</span>
       </div>
-      <p class="version-text">v1.3 · 完全离线可用 · 纯前端</p>
+      <p class="version-text">v1.4 · 完全离线可用 · 纯前端</p>
       <button class="btn btn-primary modal-close">关闭</button>
     </div>
   </div>
@@ -89,6 +90,7 @@
   <script src="js/tools/qrcode-gen.js"></script>
   <script src="js/tools/qrcode-scan.js"></script>
   <script src="js/tools/markdown.js"></script>
+  <script src="js/tools/label-generator.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => { OfficeToolkit.init(); });
   </script>

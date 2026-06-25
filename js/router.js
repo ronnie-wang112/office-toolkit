@@ -17,11 +17,24 @@ const Icons = {
   scanner: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
   qrcode_gen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><line x1="14" y1="14" x2="14" y2="14.01"/><line x1="18" y1="14" x2="18" y2="14.01"/><line x1="14" y1="18" x2="14" y2="18.01"/><line x1="18" y1="18" x2="18" y2="18.01"/></svg>',
   qrcode_scan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>',
+  label_gen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>',
   markdown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 8 15 12 7"/><line x1="13" y1="17" x2="21" y2="17"/><line x1="13" y1="13" x2="18" y2="13"/><line x1="18" y1="13" x2="18" y2="17"/></svg>',
 };
 
 // Tool registry — all tools on one page, grouped by category
 const ToolSections = [
+  {
+    name: '实用工具',
+    desc: '标签制作、二维码、Markdown 预览',
+    cat: 'utility',
+    color: 'util',
+    tools: [
+      { id:'label-gen',   name:'克欧克标签制作', icon:'label_gen',  desc:'产品标签自动生成，支持条形码、多品牌' },
+      { id:'qrcode-gen',  name:'二维码生成',   icon:'qrcode_gen',   desc:'生成自定义二维码' },
+      { id:'qrcode-scan', name:'二维码识别',   icon:'qrcode_scan',   desc:'扫描或上传图片识别二维码内容' },
+      { id:'markdown',    name:'Markdown 预览',icon:'markdown',      desc:'编辑并实时预览 Markdown' },
+    ]
+  },
   {
     name: 'PDF 工具',
     desc: '合并、拆分、压缩、转换 PDF 文件',
@@ -57,17 +70,6 @@ const ToolSections = [
     color: 'scan',
     tools: [
       { id:'scanner',     name:'拍照扫描',     icon:'scanner',      desc:'拍照/扫描文档，增强后导出 PDF' },
-    ]
-  },
-  {
-    name: '实用工具',
-    desc: '二维码生成识别、Markdown 预览',
-    cat: 'utility',
-    color: 'util',
-    tools: [
-      { id:'qrcode-gen',  name:'二维码生成',   icon:'qrcode_gen',   desc:'生成自定义二维码' },
-      { id:'qrcode-scan', name:'二维码识别',   icon:'qrcode_scan',   desc:'扫描或上传图片识别二维码内容' },
-      { id:'markdown',    name:'Markdown 预览',icon:'markdown',      desc:'编辑并实时预览 Markdown' },
     ]
   },
 ];
