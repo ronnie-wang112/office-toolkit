@@ -30,14 +30,14 @@ function Tool_label_gen(container) {
   line-height: 1.5;
 }
 .labelgen-scope .container { max-width: 1280px; margin: 0 auto; padding: 1rem; }
-@media (min-width: 768px) { .container { padding: 2rem; } }
+@media (min-width: 768px) { .labelgen-scope .container { padding: 2rem; } }
 
-.header { text-align: center; margin-bottom: 2rem; }
-.header h1 { font-size: 1.875rem; font-weight: 700; color: #111827; margin-bottom: 0.5rem; }
-.header p { color: #4b5563; }
+.labelgen-scope .header { text-align: center; margin-bottom: 2rem; }
+.labelgen-scope .header h1 { font-size: 1.875rem; font-weight: 700; color: #111827; margin-bottom: 0.5rem; }
+.labelgen-scope .header p { color: #4b5563; }
 
-.main-grid { display: grid; gap: 1.5rem; }
-@media (min-width: 1024px) { .main-grid { grid-template-columns: 1fr 1fr; } }
+.labelgen-scope .main-grid { display: grid; gap: 1.5rem; grid-template-columns: 1fr 1fr; }
+@media (max-width: 1023px) { .labelgen-scope .main-grid { grid-template-columns: 1fr; } }
 
 .labelgen-scope .card {
   background: var(--card-bg);
@@ -106,7 +106,7 @@ function Tool_label_gen(container) {
 .labelgen-scope .size-hint { text-align: center; font-size: 0.875rem; color: var(--text-muted); margin-top: 1rem; }
 
 @media (max-width: 639px) {
-  .form-grid-2, .form-grid-3 { grid-template-columns: 1fr; }
+  .labelgen-scope .form-grid-2, .labelgen-scope .form-grid-3 { grid-template-columns: 1fr; }
 }
 
 .labelgen-scope .hidden { display: none !important; }
