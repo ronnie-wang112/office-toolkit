@@ -165,10 +165,9 @@ function Tool_scan_king(container) {
     const gray = new cv.Mat();
     cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
 
-    // Adaptive Canny thresholds based on image brightness
     const meanBrightness = cv.mean(gray)[0];
-    const lowT = Math.max(20, meanBrightness * 0.3);
-    const highT = Math.min(250, meanBrightness * 0.7);
+    const lowT = Math.max(15, meanBrightness * 0.25);
+    const highT = Math.min(240, meanBrightness * 0.75);
 
     const blurred = new cv.Mat();
     cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0);
@@ -176,13 +175,17 @@ function Tool_scan_king(container) {
     cv.Canny(blurred, edges, lowT, highT);
     blurred.delete(); gray.delete();
 
-    // Find contours
+    // Morphological close to bridge gaps from hands/fingers
+    const kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 3));
+    const closed = new cv.Mat();
+    cv.morphologyEx(edges, closed, cv.MORPH_CLOSE, kernel);
+    kernel.delete(); edges.delete();
+
     const contours = new cv.MatVector();
     const hierarchy = new cv.Mat();
-    cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
-    edges.delete(); hierarchy.delete();
+    cv.findContours(closed, contours, hierarchy, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE);
+    closed.delete(); hierarchy.delete();
 
-    // Find best quadrilateral
     let bestCorners = null;
     let bestScore = 0;
     const imgArea = src.rows * src.cols;
@@ -190,47 +193,45 @@ function Tool_scan_king(container) {
     for (let i = 0; i < contours.size(); i++) {
       const cnt = contours.get(i);
       const area = cv.contourArea(cnt);
-      if (area < imgArea * 0.1 || area > imgArea * 0.95) continue;
+      if (area < imgArea * 0.08 || area > imgArea * 0.97) continue;
 
       const peri = cv.arcLength(cnt, true);
-      const approx = new cv.Mat();
-      cv.approxPolyDP(cnt, approx, 0.03 * peri, true);
+      for (const eps of [0.02, 0.05]) {
+        const approx = new cv.Mat();
+        cv.approxPolyDP(cnt, approx, eps * peri, true);
+        if (approx.rows !== 4) { approx.delete(); continue; }
 
-      if (approx.rows !== 4) { approx.delete(); continue; }
+        const hull = new cv.Mat();
+        cv.convexHull(approx, hull);
+        const hullArea = cv.contourArea(hull);
+        const convexity = area / (hullArea + 1);
+        hull.delete();
+        if (convexity < 0.82) { approx.delete(); continue; }
 
-      // Check convexity
-      const hull = new cv.Mat();
-      cv.convexHull(approx, hull);
-      const hullArea = cv.contourArea(hull);
-      const convexity = area / (hullArea + 1);
-      hull.delete();
+        const pts = [];
+        for (let j = 0; j < 4; j++) pts.push({ x: approx.data32S[j*2], y: approx.data32S[j*2+1] });
+        const ds = [Math.hypot(pts[1].x-pts[0].x, pts[1].y-pts[0].y),
+                    Math.hypot(pts[2].x-pts[1].x, pts[2].y-pts[1].y),
+                    Math.hypot(pts[3].x-pts[2].x, pts[3].y-pts[2].y),
+                    Math.hypot(pts[0].x-pts[3].x, pts[0].y-pts[3].y)];
+        const maxD = Math.max(...ds), minD = Math.min(...ds);
+        if (minD < 15 || maxD / (minD + 1) > 5) { approx.delete(); continue; }
 
-      if (convexity < 0.85) { approx.delete(); continue; }
-
-      // Check edge lengths are reasonable
-      const pts = [];
-      for (let j = 0; j < 4; j++) pts.push({ x: approx.data32S[j*2], y: approx.data32S[j*2+1] });
-      const d01 = Math.hypot(pts[1].x-pts[0].x, pts[1].y-pts[0].y);
-      const d12 = Math.hypot(pts[2].x-pts[1].x, pts[2].y-pts[1].y);
-      const d23 = Math.hypot(pts[3].x-pts[2].x, pts[3].y-pts[2].y);
-      const d30 = Math.hypot(pts[0].x-pts[3].x, pts[0].y-pts[3].y);
-      const avgEdge = (d01+d12+d23+d30)/4;
-      const ratio = avgEdge > 0 ? Math.max(d01,d12,d23,d30)/Math.min(d01,d12,d23,d30) : 99;
-      if (ratio > 4) { approx.delete(); continue; }
-
-      const score = convexity * area / imgArea;
-      if (score > bestScore) {
-        bestScore = score;
-        bestCorners = approx.clone();
+        const score = convexity * area / imgArea;
+        if (score > bestScore) {
+          bestScore = score;
+          if (bestCorners) bestCorners.delete();
+          bestCorners = approx.clone();
+        }
+        approx.delete();
+        if (bestCorners && bestScore > 0.5) break;
       }
-      approx.delete();
+      if (bestCorners && bestScore > 0.5) break;
     }
-    contours.delete();
-    src.delete();
+    contours.delete(); src.delete();
 
-    // Draw overlay
     overlayCtx.clearRect(0, 0, overlay.width, overlay.height);
-    if (bestCorners && bestScore > 0.3) {
+    if (bestCorners && bestScore > 0.25) {
       currentCorners = [];
       for (let i = 0; i < 4; i++) {
         currentCorners.push({ x: bestCorners.data32S[i*2], y: bestCorners.data32S[i*2+1] });
@@ -242,15 +243,11 @@ function Tool_scan_king(container) {
       for (let i = 1; i < 4; i++) overlayCtx.lineTo(currentCorners[i].x, currentCorners[i].y);
       overlayCtx.closePath();
       overlayCtx.stroke();
-
-      // Draw corner circles
       overlayCtx.fillStyle = '#2563EB';
       currentCorners.forEach(c => {
         overlayCtx.beginPath(); overlayCtx.arc(c.x, c.y, 6, 0, Math.PI*2); overlayCtx.fill();
       });
-
-      // Auto capture
-      if (autoCaptureEnabled && bestScore > 0.6 && Date.now() - lastCaptureTime > 2000) {
+      if (autoCaptureEnabled && bestScore > 0.55 && Date.now() - lastCaptureTime > 2000) {
         lastCaptureTime = Date.now();
         setTimeout(() => captureFrame(), 300);
       }
@@ -334,40 +331,99 @@ function Tool_scan_king(container) {
       const src = cv.imread(canvas);
       const gray = new cv.Mat();
       cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+
       const meanB = cv.mean(gray)[0];
+
+      // Adaptive blur based on image size
+      const blurSize = Math.max(5, Math.floor(Math.min(canvas.width, canvas.height) / 200) * 2 + 1);
+      const blurred = new cv.Mat();
+      cv.GaussianBlur(gray, blurred, new cv.Size(blurSize, blurSize), 0);
+
+      // Adaptive Canny
+      const lowT = Math.max(15, meanB * 0.25);
+      const highT = Math.min(240, meanB * 0.75);
       const edges = new cv.Mat();
-      cv.Canny(gray, edges, Math.max(20, meanB*0.3), Math.min(250, meanB*0.7));
+      cv.Canny(blurred, edges, lowT, highT);
+      blurred.delete();
       gray.delete();
+
+      // Morphological close to bridge gaps (e.g., fingers breaking edges)
+      const kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(5, 5));
+      const closed = new cv.Mat();
+      cv.morphologyEx(edges, closed, cv.MORPH_CLOSE, kernel);
+      kernel.delete();
+      edges.delete();
+
+      // Dilate to strengthen edges
+      const dilateKernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 3));
+      const dilated = new cv.Mat();
+      cv.dilate(closed, dilated, dilateKernel, new cv.Point(-1, -1), 1);
+      dilateKernel.delete();
+      closed.delete();
 
       const contours = new cv.MatVector();
       const hierarchy = new cv.Mat();
-      cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
-      edges.delete(); hierarchy.delete();
+      cv.findContours(dilated, contours, hierarchy, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE);
+      dilated.delete(); hierarchy.delete();
 
-      let best = null; let bestArea = 0;
+      let best = null; let bestScore = 0;
       const imgArea = src.rows * src.cols;
+
       for (let i = 0; i < contours.size(); i++) {
         const cnt = contours.get(i);
         const area = cv.contourArea(cnt);
-        if (area < imgArea * 0.08 || area > imgArea * 0.96) continue;
+        if (area < imgArea * 0.06 || area > imgArea * 0.97) continue;
+
         const peri = cv.arcLength(cnt, true);
-        const approx = new cv.Mat();
-        cv.approxPolyDP(cnt, approx, 0.03 * peri, true);
-        if (approx.rows === 4 && area > bestArea) {
-          bestArea = area;
-          if (best) best.delete();
-          best = approx.clone();
+
+        // Try multiple epsilon values for approxPolyDP
+        for (const eps of [0.02, 0.04, 0.06]) {
+          const approx = new cv.Mat();
+          cv.approxPolyDP(cnt, approx, eps * peri, true);
+
+          if (approx.rows === 4) {
+            const pts = [];
+            for (let j = 0; j < 4; j++) pts.push({ x: approx.data32S[j*2], y: approx.data32S[j*2+1] });
+
+            // Check convexity
+            const hull = new cv.Mat();
+            cv.convexHull(approx, hull);
+            const hullArea = cv.contourArea(hull);
+            const convexity = area / (hullArea + 1);
+            hull.delete();
+
+            if (convexity < 0.8) { approx.delete(); continue; }
+
+            // Check edge ratios
+            const d01 = Math.hypot(pts[1].x-pts[0].x, pts[1].y-pts[0].y);
+            const d12 = Math.hypot(pts[2].x-pts[1].x, pts[2].y-pts[1].y);
+            const d23 = Math.hypot(pts[3].x-pts[2].x, pts[3].y-pts[2].y);
+            const d30 = Math.hypot(pts[0].x-pts[3].x, pts[0].y-pts[3].y);
+            const edges2 = [d01, d12, d23, d30];
+            const maxE = Math.max(...edges2), minE = Math.min(...edges2);
+            if (minE < 20 || maxE / (minE + 1) > 6) { approx.delete(); continue; }
+
+            const score = convexity * area / imgArea;
+            if (score > bestScore) {
+              bestScore = score;
+              if (best) best.delete();
+              best = approx.clone();
+            }
+          }
+          approx.delete();
+          if (best && bestScore > 0.5) break; // Good enough
         }
-        approx.delete();
+        if (best && bestScore > 0.5) break;
       }
       contours.delete(); src.delete();
 
-      if (best) {
+      if (best && bestScore > 0.15) {
         const corners = [];
         for (let i = 0; i < 4; i++) corners.push({ x: best.data32S[i*2], y: best.data32S[i*2+1] });
         best.delete();
         return corners;
       }
+      if (best) best.delete();
     } catch(e) {}
     return null;
   }
@@ -479,9 +535,88 @@ function Tool_scan_king(container) {
     startEdgeDetection();
   }
 
+  // ── Extract document content (remove hands, margins, background) ──
+  function extractContent(mat) {
+    try {
+      const gray = new cv.Mat();
+      cv.cvtColor(mat, gray, cv.COLOR_RGBA2GRAY);
+
+      // Use gradient magnitude to find content vs background
+      const gradX = new cv.Mat();
+      const gradY = new cv.Mat();
+      cv.Sobel(gray, gradX, cv.CV_32F, 1, 0, 3);
+      cv.Sobel(gray, gradY, cv.CV_32F, 0, 1, 3);
+
+      const absGradX = new cv.Mat();
+      const absGradY = new cv.Mat();
+      cv.convertScaleAbs(gradX, absGradX);
+      cv.convertScaleAbs(gradY, absGradY);
+
+      const grad = new cv.Mat();
+      cv.addWeighted(absGradX, 0.5, absGradY, 0.5, 0, grad);
+      gradX.delete(); gradY.delete(); absGradX.delete(); absGradY.delete();
+
+      // Binary threshold on gradient
+      const binary = new cv.Mat();
+      cv.threshold(grad, binary, 15, 255, cv.THRESH_BINARY);
+      grad.delete();
+
+      // Horizontal and vertical projections to find content bounds
+      const hProj = new Array(mat.rows).fill(0);
+      const vProj = new Array(mat.cols).fill(0);
+
+      for (let y = 0; y < mat.rows; y++) {
+        for (let x = 0; x < mat.cols; x++) {
+          const val = binary.ucharPtr(y, x)[0];
+          hProj[y] += val;
+          vProj[x] += val;
+        }
+      }
+
+      const hAvg = hProj.reduce((a,b)=>a+b,0) / mat.rows;
+      const vAvg = vProj.reduce((a,b)=>a+b,0) / mat.cols;
+
+      // Find content boundaries (where projection exceeds threshold)
+      let top = 0, bottom = mat.rows - 1, left = 0, right = mat.cols - 1;
+
+      for (let y = 0; y < mat.rows; y++) {
+        if (hProj[y] > hAvg * 0.3) { top = y; break; }
+      }
+      for (let y = mat.rows - 1; y >= 0; y--) {
+        if (hProj[y] > hAvg * 0.3) { bottom = y; break; }
+      }
+      for (let x = 0; x < mat.cols; x++) {
+        if (vProj[x] > vAvg * 0.3) { left = x; break; }
+      }
+      for (let x = mat.cols - 1; x >= 0; x--) {
+        if (vProj[x] > vAvg * 0.3) { right = x; break; }
+      }
+
+      binary.delete(); gray.delete();
+
+      // Add small padding
+      const pad = Math.round(Math.min(mat.rows, mat.cols) * 0.01);
+      top = Math.max(0, top - pad);
+      bottom = Math.min(mat.rows - 1, bottom + pad);
+      left = Math.max(0, left - pad);
+      right = Math.min(mat.cols - 1, right + pad);
+
+      const contentW = right - left;
+      const contentH = bottom - top;
+
+      // Only crop if content area is significantly smaller
+      if (contentW < mat.cols * 0.85 || contentH < mat.rows * 0.85) {
+        return { rect: { x: left, y: top, w: contentW, h: contentH }, cropped: true };
+      }
+
+      return { rect: null, cropped: false };
+    } catch(e) {
+      return { rect: null, cropped: false };
+    }
+  }
+
   function processPage(canvas, corners) {
     if (!cvReady) {
-      // Fallback: simple crop
       const result = document.createElement('canvas');
       const pts = corners;
       const minX = Math.max(0, Math.min(...pts.map(p=>p.x)));
@@ -497,9 +632,9 @@ function Tool_scan_king(container) {
     try {
       const src = cv.imread(canvas);
 
-      // Perspective correction
-      const outW = 1240; // A4 width at ~150dpi
-      const outH = Math.round(outW * 1.414); // A4 ratio
+      // Step 1: Perspective correction to standard ratio
+      const outW = 1400;
+      const outH = Math.round(outW * 1.414);
 
       const srcPts = cv.matFromArray(4, 2, cv.CV_32F, [
         corners[0].x, corners[0].y,
@@ -513,26 +648,36 @@ function Tool_scan_king(container) {
       cv.warpPerspective(src, warped, M, new cv.Size(outW, outH));
       srcPts.delete(); dstPts.delete(); M.delete(); src.delete();
 
-      // Convert to grayscale for enhancement
-      const gray = new cv.Mat();
-      cv.cvtColor(warped, gray, cv.COLOR_RGBA2GRAY);
+      // Step 2: Content extraction — remove hands, margins
+      const extraction = extractContent(warped);
+      let finalMat = warped;
+      if (extraction.cropped) {
+        const r = extraction.rect;
+        const cropped = warped.roi(new cv.Rect(r.x, r.y, r.w, r.h));
+        finalMat = cropped.clone();
+        cropped.delete();
+        warped.delete();
+      }
 
-      // CLAHE enhancement
+      // Step 3: Enhance
+      const gray = new cv.Mat();
+      cv.cvtColor(finalMat, gray, cv.COLOR_RGBA2GRAY);
+
       const clahe = new cv.CLAHE(2.0, new cv.Size(8, 8));
       const enhanced = new cv.Mat();
       clahe.apply(gray, enhanced);
       clahe.delete();
 
-      // Create enhanced color version
+      // Enhanced color
       const lab = new cv.Mat();
-      cv.cvtColor(warped, lab, cv.COLOR_RGBA2RGB);
+      cv.cvtColor(finalMat, lab, cv.COLOR_RGBA2RGB);
       const labChannels = new cv.MatVector();
       cv.split(lab, labChannels);
       const lChannel = labChannels.get(0);
-      clahe = new cv.CLAHE(2.0, new cv.Size(8, 8));
+      const clahe2 = new cv.CLAHE(2.0, new cv.Size(8, 8));
       const enhancedL = new cv.Mat();
-      clahe.apply(lChannel, enhancedL);
-      clahe.delete();
+      clahe2.apply(lChannel, enhancedL);
+      clahe2.delete();
       enhancedL.copyTo(lChannel);
       const colorEnhanced = new cv.Mat();
       cv.merge(labChannels, colorEnhanced);
@@ -540,11 +685,11 @@ function Tool_scan_king(container) {
 
       // Output canvases
       const origCV = document.createElement('canvas');
-      cv.imshow(origCV, warped);
+      cv.imshow(origCV, finalMat);
       const enhCV = document.createElement('canvas');
       cv.imshow(enhCV, colorEnhanced);
 
-      warped.delete(); gray.delete(); enhanced.delete(); colorEnhanced.delete();
+      finalMat.delete(); gray.delete(); enhanced.delete(); colorEnhanced.delete();
 
       return { original: origCV, enhanced: enhCV, corners };
     } catch(e) {
