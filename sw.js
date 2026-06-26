@@ -1,67 +1,49 @@
-const CACHE_NAME = 'office-toolkit-v2';
-const ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/css/style.css',
-  '/js/utils.js',
-  '/js/router.js',
-  '/lib/opencv.js',
-  '/lib/pdf-lib.min.js',
-  '/lib/pdf.min.js',
-  '/lib/pdf.worker.min.js',
-  '/lib/mammoth.browser.min.js',
-  '/lib/html2canvas.min.js',
-  '/lib/jsQR.js',
-  '/lib/qrcode.min.js',
-  '/lib/marked.min.js',
-  '/lib/browser-image-compression.js',
-  '/js/tools/pdf-merge.js',
-  '/js/tools/pdf-split.js',
-  '/js/tools/pdf-extract.js',
-  '/js/tools/pdf-reorder.js',
-  '/js/tools/pdf-encrypt.js',
-  '/js/tools/pdf-compress.js',
-  '/js/tools/img2pdf.js',
-  '/js/tools/word2pdf.js',
-  '/js/tools/img-compress.js',
-  '/js/tools/img-convert.js',
-  '/js/tools/bg-remove.js',
-  '/js/tools/img-crop.js',
-  '/js/tools/scanner.js',
-  '/js/tools/ocr.js',
-  '/js/tools/qrcode-gen.js',
-  '/js/tools/qrcode-scan.js',
-  '/js/tools/markdown.js',
-];
+const CACHE = 'keouke-toolkit-v3';
 
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS);
-    })
+self.addEventListener('install', e => {
+  e.waitUntil(
+    caches.open(CACHE).then(c => c.addAll([
+      '/', '/index.html', '/manifest.json', '/css/style.css',
+      '/js/utils.js', '/js/router.js',
+      '/lib/pdf-lib.min.js', '/lib/pdf.min.js', '/lib/pdf.worker.min.js',
+      '/lib/mammoth.browser.min.js', '/lib/html2canvas.min.js',
+      '/lib/jsQR.js', '/lib/qrcode.min.js', '/lib/marked.min.js',
+      '/lib/browser-image-compression.js',
+      '/js/tools/pdf-merge.js', '/js/tools/pdf-split.js',
+      '/js/tools/pdf-extract.js', '/js/tools/pdf-reorder.js',
+      '/js/tools/pdf-encrypt.js', '/js/tools/pdf-compress.js',
+      '/js/tools/img2pdf.js', '/js/tools/word2pdf.js',
+      '/js/tools/img-compress.js', '/js/tools/img-convert.js',
+      '/js/tools/img-crop.js', '/js/tools/long-screenshot.js',
+      '/js/tools/scanner.js',
+      '/js/tools/qrcode-gen.js', '/js/tools/qrcode-scan.js',
+      '/js/tools/markdown.js',
+    ]))
   );
   self.skipWaiting();
 });
 
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((names) => {
-      return Promise.all(
-        names.filter((n) => n !== CACHE_NAME).map((n) => caches.delete(n))
-      );
-    })
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys => Promise.all(
+      keys.filter(k => k !== CACHE).map(k => caches.delete(k))
+    ))
   );
   self.clients.claim();
 });
 
-self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
-  if (url.origin === self.location.origin) {
-    event.respondWith(
-      caches.match(event.request).then((cached) => {
-        return cached || fetch(event.request);
-      })
+self.addEventListener('fetch', e => {
+  const url = new URL(e.request.url);
+  if (url.origin !== self.location.origin) return;
+  // Network first for HTML, cache fallback
+  if (e.request.destination === 'document') {
+    e.respondWith(
+      fetch(e.request).catch(() => caches.match(e.request))
     );
+    return;
   }
+  // Cache first for assets
+  e.respondWith(
+    caches.match(e.request).then(c => c || fetch(e.request))
+  );
 });
