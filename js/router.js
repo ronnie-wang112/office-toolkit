@@ -143,7 +143,7 @@ const OfficeToolkit = {
     });
   },
 
-  activateTool(toolId) {
+  async activateTool(toolId) {
     const tool = AllTools.find(t => t.id === toolId);
     if (!tool) return;
 
@@ -167,8 +167,22 @@ const OfficeToolkit = {
         ${tool.name}
       </h2>
       <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:20px;">${tool.desc}</p>
-      <div id="toolBody"></div>
+      <div id="toolBody">
+        <div style="text-align:center;padding:40px">
+          <div class="progress-bar"><div class="progress-bar-fill" style="width:50%"></div></div>
+          <div class="progress-text">正在加载工具...</div>
+        </div>
+      </div>
     `;
+
+    // Load dependencies on demand
+    try {
+      await LibLoader.loadFor(tool.id);
+    } catch(e) {
+      document.getElementById('toolBody').innerHTML =
+        '<p style="color:var(--warning);text-align:center;padding:20px">⚠️ 加载失败: ' + e.message + '</p>';
+      return;
+    }
 
     const toolBody = document.getElementById('toolBody');
     const fnName = `Tool_${tool.id.replace(/-/g, '_')}`;
