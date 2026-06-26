@@ -14,11 +14,9 @@ const Icons = {
   img_compress: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/><polyline points="16 17 20 13"/></svg>',
   img_convert: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>',
   long_screenshot: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="6" rx="1"/><rect x="3" y="11" width="18" height="6" rx="1"/><rect x="3" y="19" width="18" height="3" rx="1"/><line x1="12" y1="9" x2="12" y2="11"/><line x1="12" y1="17" x2="12" y2="19"/></svg>',
-  image_inpaint: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/><path d="M16 8h.01"/><path d="M12 8h.01"/><path d="M8 8h.01"/><path d="M16 12h.01"/><path d="M8 12h.01"/><path d="M16 16h.01"/><path d="M12 16h.01"/><path d="M8 16h.01"/></svg>',
   img_crop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg>',
   scanner: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
   qrcode_gen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><line x1="14" y1="14" x2="14" y2="14.01"/><line x1="18" y1="14" x2="18" y2="14.01"/><line x1="14" y1="18" x2="14" y2="18.01"/><line x1="18" y1="18" x2="18" y2="18.01"/></svg>',
-  id_photo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-3.09-3.09L14 15.73"/><rect x="9" y="14" width="6" height="4" rx="1"/></svg>',
   table_extract: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>',
   qrcode_scan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>',
   price_monitor: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>',
@@ -68,7 +66,6 @@ const ToolSections = [
       { id:'img-convert', name:'格式转换',     icon:'img_convert',  desc:'PNG/JPG/WebP 格式互转' },
       { id:'img-crop',    name:'裁剪旋转',     icon:'img_crop',     desc:'裁剪和旋转图片' },
       { id:'long-screenshot',name:'长截图拼接',  icon:'long_screenshot', desc:'多图纵向拼接，自动检测重合区域' },
-      { id:'image-inpaint',name:'图片擦除',icon:'image_inpaint', desc:'涂抹擦除水印/物体，智能修复' },
     ]
   },
   {
@@ -78,7 +75,6 @@ const ToolSections = [
     color: 'scan',
     tools: [
       { id:'scan-king',     name:'扫描王',     icon:'scanner',      desc:'实时边缘检测，透视矫正，多页扫描 PDF' },
-      { id:'id-photo',  name:'证件照制作',   icon:'id_photo',      desc:'人像抠图换底，标准证件照尺寸，导出PDF/DOCX' },
       { id:'table-extract', name:'表格提取', icon:'table_extract', desc:'拍照识别表格，OCR 提取文字，导出 Excel' },
     ]
   },
