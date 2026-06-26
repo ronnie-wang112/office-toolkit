@@ -1,212 +1,394 @@
-// ===== 长截图拼接 v10 — Picsew 风格多区域配准 + 投票 + 增量拼接 =====
+// ===== 长截图拼接 — 重构版：行签名 + 互相关检测重合区域 =====
 function Tool_long_screenshot(container) {
-  let images = [], overlaps = [];
+  let images = [];
+  let overlaps = [];     // overlaps[i] = 图i和图i+1之间的重合像素数
+  let w = 0, hs = [];    // 统一宽度、各图高度
+  const SAMPLE_W = 600;  // 分析时的统一宽度
 
-  container.innerHTML = `
-    <div id="lsPick">
+  const html = `
+    <div id="lsStep1">
       <div class="drop-zone" id="lsDrop">
-        <div class="drop-zone-icon">📐</div>
-        <div class="drop-zone-text">选择截图（2张以上，按滚动顺序）</div>
-        <div class="drop-zone-hint">自动检测重复区域并覆盖，仅保留新内容</div>
+        <div class="drop-zone-icon">📐</div><div class="drop-zone-text">选择截图（2张以上，从上到下排列）</div>
+        <div class="drop-zone-hint">重叠区域将自动检测并合并。也支持拖拽手动调整。</div>
       </div>
     </div>
-    <div id="lsEdit" class="hidden">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px">
-        <span style="font-weight:600" id="lsTitle"></span>
-        <div style="display:flex;gap:6px">
-          <button class="btn btn-primary btn-sm" id="lsAuto">🔍 自动检测重叠</button>
-          <button class="btn btn-secondary btn-sm" id="lsReset">重选图片</button>
-        </div>
+    <div id="lsStep2" class="hidden">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <button class="btn btn-secondary btn-sm" id="lsBack2">← 重新选图</button>
+        <button class="btn btn-primary btn-sm" id="lsAutoBtn">🔍 自动检测重叠</button>
+        <span style="font-size:0.78rem;color:var(--text-muted);margin-left:auto" id="lsStatus">共 ${images.length} 张</span>
       </div>
-      <div id="lsSliders"></div>
-      <div id="lsDiag" style="font-size:0.7rem;color:var(--text-secondary);margin:4px 0;display:none;line-height:1.5"></div>
-      <div style="text-align:center;background:#e8e8e8;border-radius:8px;padding:6px;overflow:auto;max-height:380px">
-        <canvas id="lsPrev" style="display:block;margin:0 auto"></canvas>
+      <div id="lsPairs"></div>
+      <div style="text-align:center;margin-top:12px;border-radius:8px;overflow:auto;background:var(--bg-card);border:1px solid var(--border);padding:8px">
+        <canvas id="lsPrev" style="max-width:100%;height:auto;display:block;margin:0 auto"></canvas>
       </div>
-      <div style="display:flex;justify-content:flex-end;align-items:flex-end;gap:10px;margin-top:8px;flex-wrap:wrap">
-        <div class="form-group" style="max-width:110px"><label>输出宽度</label><select id="lsW"><option value="auto">原始</option><option value="1080">1080</option><option value="750">750</option></select></div>
-        <button class="btn btn-primary" id="lsExp">📥 导出长图</button>
+      <div style="margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-primary" id="lsExport">📥 导出长图</button>
       </div>
     </div>
-    <div id="lsDone" class="hidden">
-      <canvas id="lsRes" style="display:block;max-width:100%;height:auto;margin:0 auto;border:1px solid var(--border);border-radius:8px"></canvas>
-      <div style="display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap">
-        <button class="btn btn-primary" id="lsDl">下载 PNG</button>
-        <button class="btn btn-secondary" id="lsCopy">复制</button>
-        <button class="btn btn-secondary" id="lsBack">← 返回调整</button>
+    <div id="lsStep3" class="hidden" style="text-align:center">
+      <canvas id="lsResult" style="max-width:100%;height:auto;border:1px solid var(--border);border-radius:8px"></canvas>
+      <div style="margin-top:10px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-primary" id="lsDl">💾 下载</button>
+        <button class="btn btn-secondary" id="lsCopy">📋 复制</button>
+        <button class="btn btn-secondary" id="lsBack3">← 返回调整</button>
       </div>
-    </div>
-  `;
+    </div>`;
 
-  const $=s=>container.querySelector(s);
-  const pick=$('#lsPick'),edit=$('#lsEdit'),done=$('#lsDone');
+  container.innerHTML = html;
+  const $ = s => container.querySelector(s);
 
-  // File loading
-  async function load(files){
-    images=[];for(const f of files){
-      if(!f.type.startsWith('image/'))continue;
-      const img=new Image();img.src=URL.createObjectURL(f);
-      await new Promise(r=>img.onload=r);images.push(img);
-    }
-    if(images.length<2){Utils.toast('至少2张','error');return;}
-    if(images.length>10)images=images.slice(0,10);
-    overlaps=new Array(images.length-1).fill(0);
-    pick.classList.add('hidden');edit.classList.remove('hidden');done.classList.add('hidden');
-    $('#lsTitle').textContent=images.length+' 张 · 先点自动检测，滑块微调，导出';
-    buildUI();draw();
+  // ── 工具函数 ──
+
+  function recalcDims() {
+    w = Math.max(...images.map(i => i.naturalWidth));
+    hs = images.map(i => Math.round(i.naturalHeight * w / i.naturalWidth));
   }
-  async function pf(){const f=await Utils.pickFiles('image/*',true);if(f?.length>=2)load(Array.from(f));else if(f?.length)Utils.toast('至少选2张','error');}
-  $('#lsDrop').onclick=pf;
-  $('#lsDrop').ondragover=e=>{e.preventDefault();$('#lsDrop').classList.add('drag-over');};
-  $('#lsDrop').ondragleave=()=>$('#lsDrop').classList.remove('drag-over');
-  $('#lsDrop').ondrop=e=>{e.preventDefault();$('#lsDrop').classList.remove('drag-over');if(e.dataTransfer.files.length)load(Array.from(e.dataTransfer.files));};
 
-  function tw(){const v=$('#lsW')?.value;return v==='auto'?Math.max(...images.map(i=>i.naturalWidth)):+v;}
-  function hh(i){return Math.round(images[i].naturalHeight*tw()/images[i].naturalWidth);}
+  function dimsAtScale(scaleW) {
+    if (!images.length) return { w: 0, hs: [] };
+    const sw = Math.max(...images.map(i => i.naturalWidth));
+    const shs = images.map(i => Math.round(i.naturalHeight * scaleW / i.naturalWidth));
+    return { w: scaleW, hs: shs };
+  }
 
-  function buildUI(){
-    const mx=overlaps.map((_,i)=>Math.min(hh(i),hh(i+1)));
-    overlaps=overlaps.map((o,i)=>Math.min(o,mx[i]));
-    $('#lsSliders').innerHTML=overlaps.map((ov,i)=>
-      `<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;padding:3px 8px;background:var(--bg);border-radius:6px;font-size:0.8rem">
-        <span style="color:var(--text-secondary);min-width:44px">${i+1}→${i+2}</span>
-        <input type="range" min="0" max="${mx[i]}" value="${ov}" class="lr" data-i="${i}" style="flex:1;height:4px;accent-color:var(--cat-pdf)">
-        <span class="lv" style="min-width:48px;text-align:right;font-weight:600;font-size:0.85rem;color:var(--cat-pdf)">${ov}px</span></div>`
+  // ── Picsew 风格：5带像素级比较 + 投票机制 ──
+  // 在图片 A 底部和图片 B 顶部提取多个像素条带，
+  // 每个条带独立计算 MSE，投票决定是否有重叠
+  function findOverlap(imgA, imgB) {
+    const ANALYSIS_W = 400;
+    const idxA = images.indexOf(imgA);
+    const idxB = images.indexOf(imgB);
+    const hA = Math.round(imgA.naturalHeight * ANALYSIS_W / imgA.naturalWidth);
+    const hB = Math.round(imgB.naturalHeight * ANALYSIS_W / imgB.naturalWidth);
+
+    // 绘制到 canvas 以便像素级比较
+    function getCanvas(img, targetW, targetH) {
+      const cv = document.createElement('canvas');
+      cv.width = targetW; cv.height = targetH;
+      cv.getContext('2d').drawImage(img, 0, 0, targetW, targetH);
+      return cv;
+    }
+    const ca = getCanvas(imgA, ANALYSIS_W, hA);
+    const cb = getCanvas(imgB, ANALYSIS_W, hB);
+    const pa = ca.getContext('2d').getImageData(0, 0, ANALYSIS_W, hA).data;
+    const pb = cb.getContext('2d').getImageData(0, 0, ANALYSIS_W, hB).data;
+
+    const maxOverlap = Math.min(hA, hB);
+    const minOverlap = Math.max(10, Math.round(maxOverlap * 0.02));
+    const searchLen = Math.min(maxOverlap, Math.round(Math.min(hA, hB) * 0.85));
+
+    const BANDS = 5;
+    const BAND_H = 30;          // 每个条带高度
+    const MSE_TOLERANCE = 1200; // 归一化 MSE 阈值
+
+    let bestO = 0;
+    let bestVotes = 0;
+    let bestTotalMSE = Infinity;
+
+    // 像素比较函数：比较 A 中 y1 开始和 B 中 y2 开始的 h 行
+    function bandMSE(y1, y2, h) {
+      let sumSq = 0, count = 0;
+      for (let dy = 0; dy < h; dy++) {
+        const rA = (y1 + dy) * ANALYSIS_W * 4;
+        const rB = (y2 + dy) * ANALYSIS_W * 4;
+        for (let x = 0; x < ANALYSIS_W; x += 2) { // 每隔 1 像素采样
+          const iA = rA + x * 4;
+          const iB = rB + x * 4;
+          const dr = pa[iA] - pb[iB];
+          const dg = pa[iA + 1] - pb[iB + 1];
+          const db = pa[iA + 2] - pb[iB + 2];
+          sumSq += dr * dr + dg * dg + db * db;
+          count += 3;
+        }
+      }
+      return count > 0 ? sumSq / count : Infinity;
+    }
+
+    // 遍历所有可能的 overlap
+    for (let o = minOverlap; o <= searchLen; o += 4) {
+      let votes = 0;
+      let totalMSE = 0;
+
+      for (let b = 0; b < BANDS; b++) {
+        // 条带位置按比例分布在整个重叠区域内
+        const bandCenter = Math.round(o * (b + 1) / (BANDS + 1));
+        let y1 = hA - o + bandCenter - Math.floor(BAND_H / 2);
+        let y2 = bandCenter - Math.floor(BAND_H / 2);
+        // 边界钳制
+        y1 = Math.max(0, Math.min(hA - BAND_H, y1));
+        y2 = Math.max(0, Math.min(hB - BAND_H, y2));
+
+        const mse = bandMSE(y1, y2, BAND_H);
+        totalMSE += mse;
+        if (mse < MSE_TOLERANCE) votes++;
+      }
+
+      if (votes > bestVotes || (votes === bestVotes && totalMSE < bestTotalMSE)) {
+        bestVotes = votes;
+        bestO = o;
+        bestTotalMSE = totalMSE;
+      }
+    }
+
+    // 投票机制：需要 >= 4/5 条带一致（Picsew 用 75%，即 4/5）
+    if (bestVotes < 4) {
+      return { overlap: 0, confidence: 0, votes: bestVotes };
+    }
+
+    // 置信度基于投票数
+    const confidence = bestVotes === 5 ? 0.9 : bestVotes === 4 ? 0.7 : 0.5;
+
+    // 缩放回原始像素坐标
+    const origOverlap = Math.round(bestO * Math.max(...images.map(i=>i.naturalWidth)) / ANALYSIS_W);
+    return { overlap: origOverlap, confidence, votes: bestVotes };
+  }
+
+  // ── 自动检测所有重合 ──
+  async function autoDetect() {
+    const btn = $('#lsAutoBtn');
+    btn.textContent = '⏳ 分析中...';
+    btn.disabled = true;
+    $('#lsStatus').textContent = '正在检测重合区域...';
+
+    // 用 setTimeout 让 UI 先刷新
+    await new Promise(r => setTimeout(r, 60));
+
+    let found = 0;
+    for (let i = 0; i < images.length - 1; i++) {
+      $('#lsStatus').textContent = `分析第 ${i + 1}/${images.length - 1} 组重合区域...`;
+      await new Promise(r => setTimeout(r, 10)); // 让 UI 呼吸
+
+      const result = findOverlap(images[i], images[i + 1]);
+      if (result.confidence >= 0.4) {
+        overlaps[i] = result.overlap;
+        found++;
+      } else {
+        overlaps[i] = 0;
+      }
+    }
+
+    btn.textContent = '🔍 自动检测重叠';
+    btn.disabled = false;
+
+    const msg = found > 0
+      ? `检测到 ${found} 处重合（置信度: ${found === images.length - 1 ? '高' : '部分'}），可拖动滑块微调`
+      : '未检测到明显重合，请手动拖动滑块调整';
+    $('#lsStatus').textContent = `${msg}`;
+    Utils.toast(msg, found > 0 ? 'success' : 'info');
+
+    renderSliders();
+    drawPreview();
+  }
+
+  // ── 渲染滑块 ──
+  function renderSliders() {
+    const maxOvs = [];
+    for (let i = 0; i < images.length - 1; i++) {
+      maxOvs.push(Math.min(hs[i], hs[i + 1]));
+    }
+    // clamp
+    overlaps = overlaps.map((o, i) => Math.min(o, maxOvs[i]));
+
+    const wInfo = images.map((img, i) =>
+      `<span style="font-size:0.72rem;color:var(--text-muted)">图${i + 1}: ${img.naturalWidth}×${img.naturalHeight}</span>`
     ).join('');
-    $('#lsSliders').querySelectorAll('.lr').forEach(r=>r.oninput=()=>{
-      overlaps[+r.dataset.i]=+r.value;
-      $('#lsSliders').querySelectorAll('.lv')[+r.dataset.i].textContent=overlaps[+r.dataset.i]+'px';
-      draw();
+
+    $('#lsPairs').innerHTML = `
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px">${wInfo}</div>
+      ${overlaps.map((ov, i) => `
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;font-size:0.82rem">
+          <span style="color:var(--text-muted);min-width:56px;font-weight:600">图${i + 1}↔${i + 2}</span>
+          <input type="range" min="0" max="${maxOvs[i]}" value="${ov}"
+            class="ls-r" data-i="${i}"
+            style="flex:1;accent-color:var(--cat-pdf);height:6px">
+          <span class="ls-v" style="min-width:52px;text-align:right;font-weight:600;color:var(--cat-pdf);font-variant-numeric:tabular-nums">${ov}px</span>
+        </div>`).join('')}`;
+
+    // 滑块事件 — 用 rAF 节流更新预览
+    let rafId = null;
+    $('#lsPairs').querySelectorAll('.ls-r').forEach(r => {
+      r.addEventListener('input', () => {
+        overlaps[+r.dataset.i] = +r.value;
+        $('#lsPairs').querySelectorAll('.ls-v')[+r.dataset.i].textContent = overlaps[+r.dataset.i] + 'px';
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(() => { drawPreview(); rafId = null; });
+      });
     });
   }
 
-  function draw(){
-    const w=tw(),hs=images.map((_,i)=>hh(i));
-    const s=Math.min(1,350/w),pw=Math.round(w*s),phs=hs.map(h=>Math.round(h*s)),ovs=overlaps.map(o=>Math.round(o*s));
-    // Compute each image's rendered height (= full height - overlap with PREVIOUS)
-    const renderH=[phs[0]];
-    for(let i=1;i<images.length;i++)renderH.push(phs[i]-ovs[i-1]);
-    const pos=[0];
-    for(let i=1;i<images.length;i++)pos.push(pos[i-1]+renderH[i-1]);
-    const th=pos[images.length-1]+renderH[images.length-1];
+  // ── 预览 ──
+  function drawPreview() {
+    if (!images.length) return;
+    const PREV_W = 400;
+    const scale = PREV_W / w;
 
-    const cv=document.createElement('canvas');cv.width=pw;cv.height=th;
-    const cx=cv.getContext('2d');cx.fillStyle='#e0e0e0';cx.fillRect(0,0,pw,th);
-    for(let i=0;i<images.length;i++){
-      // Crop: image i is drawn fully from its top, but its top 'overlaps[i-1]' is covered by previous image
-      const srcY=(i>0)?ovs[i-1]:0;
-      const srcH=phs[i]-srcY;
-      cx.fillStyle='#fff';cx.fillRect(0,pos[i],pw,renderH[i]);
-      cx.drawImage(images[i],0,srcY,pw,srcH,0,pos[i],pw,renderH[i]);
+    const phs = hs.map(h => Math.round(h * scale));
+    const ovs = overlaps.map(o => Math.round(o * scale));
+
+    // 可见高度 = 每张图高度减去顶部被覆盖部分
+    const vh = phs.map((ph, i) => i === 0 ? ph : ph - ovs[i - 1]);
+    const totalH = vh.reduce((a, b) => a + b, 0);
+
+    // 每张图起始 y 位置
+    let y = 0;
+    const pos = vh.map(v => { const p = y; y += v; return p; });
+
+    const cv = document.createElement('canvas');
+    cv.width = PREV_W;
+    cv.height = totalH;
+    const cx = cv.getContext('2d');
+    cx.fillStyle = '#fff';
+    cx.fillRect(0, 0, PREV_W, totalH);
+
+    for (let i = 0; i < images.length; i++) {
+      const srcY = i > 0 ? ovs[i - 1] : 0;
+      const srcH = phs[i] - srcY;
+      cx.drawImage(images[i], 0, srcY, PREV_W, srcH, 0, pos[i], PREV_W, vh[i]);
     }
-    // Overlap boundaries
-    for(let i=0;i<overlaps.length;i++){
-      if(ovs[i]>2){cx.fillStyle='rgba(37,99,235,0.10)';cx.fillRect(0,pos[i+1]-ovs[i],pw,ovs[i]);}
-      cx.strokeStyle='#2563eb';cx.lineWidth=1;cx.setLineDash([3,3]);
-      cx.beginPath();cx.moveTo(0,pos[i+1]);cx.lineTo(pw,pos[i+1]);cx.stroke();cx.setLineDash([]);
+
+    // 高亮重合区域
+    for (let i = 0; i < overlaps.length; i++) {
+      const topY = pos[i + 1];
+      if (ovs[i] > 1) {
+        // 透明蓝色覆盖
+        cx.fillStyle = 'rgba(37,99,235,0.12)';
+        cx.fillRect(0, topY - ovs[i], PREV_W, ovs[i]);
+      }
+      // 接缝线
+      cx.strokeStyle = '#2563eb';
+      cx.lineWidth = 1.5;
+      cx.setLineDash([4, 2]);
+      cx.beginPath();
+      cx.moveTo(0, topY);
+      cx.lineTo(PREV_W, topY);
+      cx.stroke();
+      cx.setLineDash([]);
+
+      // 标签
+      if (overlaps[i] > 0) {
+        cx.fillStyle = '#2563eb';
+        cx.font = 'bold 11px system-ui, sans-serif';
+        cx.fillText(`重合 ${overlaps[i]}px ↑`, 6, topY - 3);
+      }
     }
-    const d=$('#lsPrev');d.width=pw;d.height=th;d.getContext('2d').drawImage(cv,0,0);
-    d.style.width=Math.min(pw,350)+'px';d.style.height='auto';
+
+    const disp = $('#lsPrev');
+    disp.width = PREV_W;
+    disp.height = totalH;
+    disp.getContext('2d').drawImage(cv, 0, 0);
+    disp.style.width = Math.min(PREV_W, 400) + 'px';
+    disp.style.height = 'auto';
   }
 
-  // ===== 多区域配准 + 投票 (Picsew style) =====
-  $('#lsAuto').onclick=()=>{
-    const btn=$('#lsAuto');btn.textContent='⏳ ...';btn.disabled=true;
-    const w=tw(),cw=250;let diag=[],found=0;
+  // ── 导出 ──
+  function doExport() {
+    const vh = hs.map((h, i) => i === 0 ? h : h - overlaps[i - 1]);
+    const totalH = vh.reduce((a, b) => a + b, 0);
 
-    setTimeout(()=>{
-      for(let i=0;i<images.length-1;i++){
-        const ch1=Math.round(images[i].naturalHeight*cw/images[i].naturalWidth);
-        const ch2=Math.round(images[i+1].naturalHeight*cw/images[i+1].naturalWidth);
+    const cv = document.createElement('canvas');
+    cv.width = w;
+    cv.height = totalH;
+    const cx = cv.getContext('2d');
+    cx.fillStyle = '#fff';
+    cx.fillRect(0, 0, w, totalH);
 
-        const ca=document.createElement('canvas');ca.width=cw;ca.height=ch1;
-        ca.getContext('2d').drawImage(images[i],0,0,cw,ch1);
-        const cb=document.createElement('canvas');cb.width=cw;cb.height=ch2;
-        cb.getContext('2d').drawImage(images[i+1],0,0,cw,ch2);
-
-        const ctxA=ca.getContext('2d'),ctxB=cb.getContext('2d');
-        const hA=ch1,hB=ch2,maxOv=Math.min(hA,hB);
-
-        // Extract 5 horizontal bands from potential overlap zone
-        const NUM_BANDS=5;
-        const bandH=40; // each band 40 rows tall at comparison resolution
-
-        // For each candidate overlap, compute MSE per band, then vote
-        let bestOv=0,bestVotes=0;
-        const tolerance=600; // MSE tolerance per band
-
-        for(let o=10;o<=maxOv;o+=4){
-          // Position 5 bands: spread evenly across the overlap zone
-          const bandPositions=[];
-          for(let b=0;b<NUM_BANDS;b++)bandPositions.push(Math.round(o*(b+1)/(NUM_BANDS+1)));
-
-          const bandMSEs=[];
-          for(const bp of bandPositions){
-            // Compare row 'hA - o + bp' from A with row 'bp' from B
-            const dA=ctxA.getImageData(0,hA-o+bp,cw,bandH).data;
-            const dB=ctxB.getImageData(0,bp,cw,bandH).data;
-            let mse=0;
-            for(let idx=0;idx<cw*bandH*4;idx+=8){
-              const dr=dA[idx]-dB[idx],dg=dA[idx+1]-dB[idx+1],db=dA[idx+2]-dB[idx+2];
-              mse+=dr*dr+dg*dg+db*db;
-            }
-            mse/=(cw*bandH*4/8);
-            bandMSEs.push(mse);
-          }
-
-          // Vote: count bands with MSE < tolerance
-          const votes=bandMSEs.filter(m=>m<tolerance).length;
-          if(votes>bestVotes){bestVotes=votes;bestOv=o;}
-        }
-
-        const fullOv=Math.round(bestOv*w/cw);
-        const pass=bestVotes>=4; // ≥75% = 4/5 bands
-        diag.push(`图${i+1}→${i+2}: ${bestVotes}/${NUM_BANDS}票 → ${pass?'✓ 重叠 '+fullOv+'px':'✗ 无匹配'}`);
-
-        if(pass){overlaps[i]=Math.min(fullOv,Math.round(hh(i)*0.85));found++;}
-        else{overlaps[i]=0;}
-      }
-      buildUI();draw();
-      $('#lsDiag').style.display='block';$('#lsDiag').innerHTML=diag.map(d=>'<div>'+d+'</div>').join('');
-      btn.textContent='🔍 自动检测';btn.disabled=false;
-      Utils.toast(found?`检测到 ${found}/${overlaps.length} 处重叠`:'未检测到，请手动拖动滑块',found?'success':'info');
-    },50);
-  };
-
-  // Export: incremental stitch (only new content)
-  $('#lsExp').onclick=()=>{
-    const w=tw(),hs=images.map((_,i)=>hh(i));
-    const renderH=[hs[0]];
-    for(let i=1;i<images.length;i++)renderH.push(hs[i]-overlaps[i-1]);
-    const th=renderH.reduce((a,b)=>a+b,0);
-
-    const cv=document.createElement('canvas');cv.width=w;cv.height=th;
-    const cx=cv.getContext('2d');cx.fillStyle='#fff';cx.fillRect(0,0,w,th);
-
-    let y=0;
-    for(let i=0;i<images.length;i++){
-      const srcY=(i>0)?overlaps[i-1]:0;
-      const srcH=hs[i]-srcY;
-      cx.drawImage(images[i],0,srcY,w,srcH,0,y,w,renderH[i]);
-      y+=renderH[i];
+    let y = 0;
+    for (let i = 0; i < images.length; i++) {
+      const srcY = i > 0 ? overlaps[i - 1] : 0;
+      cx.drawImage(images[i], 0, srcY, w, hs[i] - srcY, 0, y, w, vh[i]);
+      y += vh[i];
     }
 
-    cv.toBlob(b=>{
-      edit.classList.add('hidden');done.classList.remove('hidden');
-      $('#lsRes').width=w;$('#lsRes').height=th;
-      $('#lsRes').style.maxWidth=Math.min(w,600)+'px';$('#lsRes').style.height='auto';
-      $('#lsRes').getContext('2d').drawImage(cv,0,0);$('#lsRes')._blob=b;
-    },'image/png');
+    cv.toBlob(b => {
+      $('#lsStep2').classList.add('hidden');
+      $('#lsStep3').classList.remove('hidden');
+      const rc = $('#lsResult');
+      rc.width = w;
+      rc.height = totalH;
+      rc.style.maxWidth = Math.min(w, 500) + 'px';
+      rc.style.height = 'auto';
+      rc.getContext('2d').drawImage(cv, 0, 0);
+      rc._blob = b;
+      rc._w = w;
+      rc._h = totalH;
+    }, 'image/png');
+  }
+
+  // ── 加载图片 ──
+  async function loadFiles(files) {
+    images = [];
+    for (const f of files) {
+      if (!f.type.startsWith('image/')) continue;
+      const img = new Image();
+      img.src = URL.createObjectURL(f);
+      await new Promise((r, rej) => { img.onload = r; img.onerror = rej; });
+      images.push(img);
+    }
+    if (images.length < 2) {
+      Utils.toast('请至少选择2张图片', 'error');
+      return;
+    }
+    recalcDims();
+    overlaps = new Array(images.length - 1).fill(0);
+
+    $('#lsStep1').classList.add('hidden');
+    $('#lsStep2').classList.remove('hidden');
+    $('#lsStep3').classList.add('hidden');
+    $('#lsStatus').textContent = `共 ${images.length} 张图片`;
+
+    renderSliders();
+    drawPreview();
+
+    // 自动触发检测
+    autoDetect();
+  }
+
+  // ── 事件绑定 ──
+
+  $('#lsDrop').onclick = async () => {
+    const files = await Utils.pickFiles('image/*', true);
+    if (files?.length >= 2) loadFiles(Array.from(files));
+  };
+  $('#lsDrop').ondragover = e => { e.preventDefault(); $('#lsDrop').classList.add('drag-over'); };
+  $('#lsDrop').ondragleave = () => $('#lsDrop').classList.remove('drag-over');
+  $('#lsDrop').ondrop = e => {
+    e.preventDefault();
+    $('#lsDrop').classList.remove('drag-over');
+    if (e.dataTransfer.files.length >= 2) loadFiles(Array.from(e.dataTransfer.files));
   };
 
-  $('#lsW').onchange=()=>{buildUI();draw();};
-  $('#lsReset').onclick=()=>{images=[];overlaps=[];pick.classList.remove('hidden');edit.classList.add('hidden');done.classList.add('hidden');};
-  $('#lsDl').onclick=()=>{const b=$('#lsRes')._blob;if(b)Utils.download(b,'长截图_'+new Date().toISOString().slice(0,10)+'.png');};
-  $('#lsCopy').onclick=async()=>{
-    const b=$('#lsRes')._blob;if(!b)return;
-    try{await navigator.clipboard.write([new ClipboardItem({'image/png':b})]);Utils.toast('已复制','success');}
-    catch(e){const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='long.png';a.click();}
+  $('#lsBack2').onclick = () => {
+    images = []; overlaps = [];
+    $('#lsStep1').classList.remove('hidden');
+    $('#lsStep2').classList.add('hidden');
+    $('#lsStep3').classList.add('hidden');
   };
-  $('#lsBack').onclick=()=>{done.classList.add('hidden');edit.classList.remove('hidden');};
+  $('#lsBack3').onclick = () => {
+    $('#lsStep3').classList.add('hidden');
+    $('#lsStep2').classList.remove('hidden');
+  };
+
+  $('#lsAutoBtn').onclick = autoDetect;
+  $('#lsExport').onclick = doExport;
+
+  $('#lsDl').onclick = () => {
+    const b = $('#lsResult')._blob;
+    if (b) Utils.download(b, '长截图.png');
+  };
+  $('#lsCopy').onclick = async () => {
+    const b = $('#lsResult')._blob;
+    if (!b) return;
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': b })]);
+      Utils.toast('已复制到剪贴板', 'success');
+    } catch {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(b);
+      a.download = '长截图.png';
+      a.click();
+    }
+  };
 }
-function Tool_long_screenshot_deactivate(){}
+
+function Tool_long_screenshot_deactivate() {}

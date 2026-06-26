@@ -1,4 +1,4 @@
-const CACHE = 'keouke-toolkit-v3';
+const CACHE = 'keouke-toolkit-v5';
 
 self.addEventListener('install', e => {
   e.waitUntil(
