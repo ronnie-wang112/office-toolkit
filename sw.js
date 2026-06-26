@@ -1,4 +1,4 @@
-const CACHE = 'keouke-toolkit-v6';
+const CACHE = 'keouke-toolkit-v8';
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -8,7 +8,13 @@ self.addEventListener('install', e => {
       '/lib/pdf-lib.min.js', '/lib/pdf.min.js', '/lib/pdf.worker.min.js',
       '/lib/mammoth.browser.min.js', '/lib/html2canvas.min.js',
       '/lib/jsQR.js', '/lib/qrcode.min.js', '/lib/marked.min.js',
-      '/lib/browser-image-compression.js',
+      '/lib/browser-image-compression.js', '/lib/face-api.min.js',
+      '/lib/tesseract.min.js', '/lib/tesseract.worker.min.js',
+      '/lib/xlsx.full.min.js',
+      '/lib/models/tiny_face_detector_model-shard1',
+      '/lib/models/tiny_face_detector_model-weights_manifest.json',
+      '/lib/models/face_landmark_68_model-shard1',
+      '/lib/models/face_landmark_68_model-weights_manifest.json',
       '/js/tools/pdf-merge.js', '/js/tools/pdf-split.js',
       '/js/tools/pdf-extract.js', '/js/tools/pdf-reorder.js',
       '/js/tools/pdf-encrypt.js', '/js/tools/pdf-compress.js',
@@ -18,6 +24,7 @@ self.addEventListener('install', e => {
       '/js/tools/scanner.js',
       '/js/tools/qrcode-gen.js', '/js/tools/qrcode-scan.js',
       '/js/tools/markdown.js',
+      '/js/tools/id-photo.js', '/js/tools/table-extract.js',
     ]))
   );
   self.skipWaiting();
@@ -35,14 +42,12 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (url.origin !== self.location.origin) return;
-  // Network first for HTML, cache fallback
   if (e.request.destination === 'document') {
     e.respondWith(
       fetch(e.request).catch(() => caches.match(e.request))
     );
     return;
   }
-  // Cache first for assets
   e.respondWith(
     caches.match(e.request).then(c => c || fetch(e.request))
   );
