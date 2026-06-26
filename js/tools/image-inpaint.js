@@ -21,8 +21,8 @@ function Tool_image_inpaint(container) {
           <span style="font-size:0.8rem;color:var(--text-muted)" id="ipFileLabel">未选择图片</span>
         </div>
 
-        <div style="position:relative;overflow:auto;border:1px solid var(--border);border-radius:8px;background:repeating-conic-gradient(#e0e0e0 0% 25%,#fff 0% 50%) 50%/16px 16px;min-height:300px;display:flex;align-items:center;justify-content:center;cursor:crosshair" id="ipCanvasWrap">
-          <canvas id="ipCanvas" style="max-width:100%;position:absolute;top:0;left:0"></canvas>
+        <div style="border:1px solid var(--border);border-radius:8px;background:repeating-conic-gradient(#e0e0e0 0% 25%,#fff 0% 50%) 50%/16px 16px;min-height:200px;display:flex;align-items:center;justify-content:center;cursor:crosshair;padding:8px" id="ipCanvasWrap">
+          <canvas id="ipCanvas" style="max-width:100%;height:auto;display:block"></canvas>
         </div>
 
         <div style="margin-top:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
@@ -90,17 +90,20 @@ function Tool_image_inpaint(container) {
   };
 
   function initCanvases(img) {
-    // Max display size
-    const maxW = 800;
+    // Responsive sizing: fit within wrapper, cap at image natural size
+    const wrapWidth = canvasWrap.clientWidth || 360;
+    const maxW = Math.min(wrapWidth, img.width, 1200);
     let w = img.width, h = img.height;
     if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
 
     canvas.width = w;
     canvas.height = h;
+    canvas.style.width = '100%';
+    canvas.style.height = 'auto';
     ctx.clearRect(0, 0, w, h);
     ctx.drawImage(img, 0, 0, w, h);
 
-    // Mask canvas (same size, transparent)
+    // Mask canvas (same size as image canvas)
     maskCanvas = document.createElement('canvas');
     maskCanvas.width = w;
     maskCanvas.height = h;
@@ -115,9 +118,9 @@ function Tool_image_inpaint(container) {
     resultCanvas.height = h;
     resultCtx.clearRect(0, 0, w, h);
 
-    // Update canvas wrap size
-    canvasWrap.style.width = w + 'px';
-    canvasWrap.style.height = h + 'px';
+    // Remove fixed size on wrapper
+    canvasWrap.style.width = '';
+    canvasWrap.style.height = '';
 
     undoStack = [];
     showingResult = false;
@@ -130,8 +133,8 @@ function Tool_image_inpaint(container) {
   // ── Drawing ──
   function getPos(e) {
     const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
+    const scaleX = canvas.width / (rect.width || 1);
+    const scaleY = canvas.height / (rect.height || 1);
     return {
       x: Math.round((e.clientX - rect.left) * scaleX),
       y: Math.round((e.clientY - rect.top) * scaleY)
