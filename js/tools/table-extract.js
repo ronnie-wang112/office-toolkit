@@ -61,7 +61,33 @@ function Tool_table_extract(container) {
   // ── OpenCV loader ──
   function loadOpenCV() {
     return new Promise((resolve, reject) => {
-      if (typeof cv !== 'undefined' && cv.Mat) { cvReady = true; resolve(); return; }
+      // Check if already fully loaded (by another tool or previous use)
+      if (typeof cv !== 'undefined' && cv.Mat) {
+        cvReady = true;
+        resolve();
+        return;
+      }
+      // Check if cv exists but still initializing
+      if (typeof cv !== 'undefined' && !cv.Mat) {
+        const check = () => {
+          if (cv.Mat) { cvReady = true; resolve(); }
+          else setTimeout(check, 100);
+        };
+        check();
+        setTimeout(() => { if (!cvReady) reject(new Error('OpenCV 初始化超时，请刷新页面重试')); }, 30000);
+        return;
+      }
+      // Check if already loading (script tag exists)
+      if (document.querySelector('script[src="lib/opencv.js"]')) {
+        const check = () => {
+          if (typeof cv !== 'undefined' && cv.Mat) { cvReady = true; resolve(); }
+          else setTimeout(check, 200);
+        };
+        check();
+        setTimeout(() => { if (!cvReady) reject(new Error('OpenCV 加载超时')); }, 30000);
+        return;
+      }
+      // Load fresh
       const s = document.createElement('script');
       s.src = 'lib/opencv.js';
       s.onload = () => {
@@ -70,9 +96,9 @@ function Tool_table_extract(container) {
           else setTimeout(check, 100);
         };
         check();
-        setTimeout(() => { if (!cvReady) reject(new Error('timeout')); }, 20000);
+        setTimeout(() => { if (!cvReady) reject(new Error('OpenCV 初始化超时，文件可能损坏')); }, 30000);
       };
-      s.onerror = () => reject(new Error('load fail'));
+      s.onerror = () => reject(new Error('OpenCV 文件加载失败，请检查 lib/opencv.js 是否存在'));
       document.head.appendChild(s);
     });
   }
@@ -526,15 +552,16 @@ function Tool_table_extract(container) {
   // ── Init ──
   (async () => {
     try {
-      loadText.textContent = '正在加载 OpenCV 视觉引擎...';
+      loadText.textContent = '正在加载 OpenCV 视觉引擎 (约10MB)...';
       await loadOpenCV();
       loadText.textContent = '视觉引擎就绪，启动摄像头...';
       loading.classList.add('hidden');
       ui.classList.remove('hidden');
       await startCamera();
     } catch(e) {
-      loadText.innerHTML = `<div style="color:var(--warning);padding:20px"><p>⚠️ 视觉引擎加载失败</p><p style="font-size:0.8rem;color:var(--text-muted)">可上传图片使用基础功能</p></div>`;
-      setTimeout(() => { loading.classList.add('hidden'); ui.classList.remove('hidden'); startCamera(); }, 2000);
+      console.warn('OpenCV load error:', e);
+      loadText.innerHTML = `<div style="color:var(--warning);padding:20px"><p>⚠️ 视觉引擎加载失败</p><p style="font-size:0.8rem;color:var(--text-muted)">${e.message || '未知错误'}</p><p style="font-size:0.75rem;margin-top:8px">💡 可<a href="https://docs.opencv.org/4.x/opencv.js" target="_blank" style="color:var(--primary)">下载 opencv.js</a> 放到 lib/ 目录（约10MB），然后刷新页面</p></div>`;
+      setTimeout(() => { loading.classList.add('hidden'); ui.classList.remove('hidden'); startCamera(); }, 3000);
     }
   })();
 }

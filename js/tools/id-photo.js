@@ -251,27 +251,25 @@ function Tool_id_photo(container) {
         bctx.drawImage(maskCV, 0, 0);
         bctx.filter = 'none';
 
-        // Composite: person over background using feathered mask
-        rctx.drawImage(offCV, 0, 0);
-        // Apply mask using destination-in
-        rctx.globalCompositeOperation = 'destination-in';
-        rctx.drawImage(blurCV, 0, 0);
-        rctx.globalCompositeOperation = 'source-over';
+        // Composite: background + person on top with feathered mask
+        // Step 1: Fill resultCV with background color
+        rctx.fillStyle = bgColor;
+        rctx.fillRect(0, 0, outW, outH);
+        // Step 2: Draw person clipped to mask on top
+        // First, create a temp canvas with the person + mask applied
+        const personCV = document.createElement('canvas');
+        personCV.width = outW; personCV.height = outH;
+        const pctx2 = personCV.getContext('2d');
+        pctx2.drawImage(offCV, 0, 0);
+        pctx2.globalCompositeOperation = 'destination-in';
+        pctx2.drawImage(blurCV, 0, 0);
+        // Step 3: Draw the masked person onto the background
+        rctx.drawImage(personCV, 0, 0);
 
-        // Redraw background behind
-        const bgOnly = document.createElement('canvas');
-        bgOnly.width = outW;
-        bgOnly.height = outH;
-        const boctx = bgOnly.getContext('2d');
-        boctx.fillStyle = bgColor;
-        boctx.fillRect(0, 0, outW, outH);
-        boctx.globalCompositeOperation = 'destination-over';
-        boctx.drawImage(resultCV, 0, 0);
-
-        resultCanvas = bgOnly;
+        resultCanvas = resultCV;
         preview.width = outW;
         preview.height = outH;
-        pctx.drawImage(bgOnly, 0, 0);
+        pctx.drawImage(resultCV, 0, 0);
 
       } else {
         // No landmarks, just do center crop
