@@ -144,31 +144,31 @@ function Tool_image_inpaint(container) {
   function drawMask(x, y) {
     if (!maskCanvas) return;
     const mctx = maskCanvas.getContext('2d');
-    mctx.globalCompositeOperation = toolMode === 'brush' ? 'source-over' : 'destination-out';
-    mctx.fillStyle = toolMode === 'brush' ? 'rgba(255,0,0,0.6)' : 'rgba(0,0,0,0)';
-    mctx.beginPath();
-    mctx.arc(x, y, brushSize / 2, 0, Math.PI * 2);
-    mctx.fill();
-    mctx.globalCompositeOperation = 'source-over';
+    if (toolMode === 'brush') {
+      mctx.fillStyle = 'rgba(255,0,0,0.6)';
+      mctx.beginPath();
+      mctx.arc(x, y, brushSize / 2, 0, Math.PI * 2);
+      mctx.fill();
+    } else {
+      // Eraser: use clearRect to remove mask
+      mctx.clearRect(x - brushSize/2, y - brushSize/2, brushSize, brushSize);
+    }
     updateDisplay();
   }
 
   function updateDisplay() {
-    if (!displayCanvas || !maskCanvas) return;
+    if (!displayCanvas || !maskCanvas || !canvas) return;
     const dctx = displayCanvas.getContext('2d');
     dctx.clearRect(0, 0, displayCanvas.width, displayCanvas.height);
+    // Draw original image
     dctx.drawImage(canvas, 0, 0);
-
-    // Overlay mask as semi-transparent red
-    dctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
-    const maskData = maskCanvas.getContext('2d').getImageData(0, 0, maskCanvas.width, maskCanvas.height);
-    for (let i = 0; i < maskData.data.length; i += 4) {
-      if (maskData.data[i + 3] > 0) {
-        const px = (i / 4) % maskCanvas.width;
-        const py = Math.floor((i / 4) / maskCanvas.width);
-        dctx.fillRect(px, py, 1, 1);
-      }
-    }
+    // Overlay mask as semi-transparent red (efficient compositing)
+    dctx.globalAlpha = 0.35;
+    dctx.drawImage(maskCanvas, 0, 0);
+    dctx.globalAlpha = 1.0;
+    // Copy to visible canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(displayCanvas, 0, 0);
   }
 
   canvas.addEventListener('mousedown', (e) => {
@@ -256,12 +256,12 @@ function Tool_image_inpaint(container) {
   // ── Toggle before/after ──
   let showingOriginal = false;
   $('#ipToggle').onclick = () => {
-    if (!resultCanvas) return;
+    if (!resultCanvas || resultCanvas.width === 0) return;
     showingOriginal = !showingOriginal;
     if (showingOriginal) {
-      const dctx = displayCanvas.getContext('2d');
-      dctx.clearRect(0, 0, displayCanvas.width, displayCanvas.height);
-      dctx.drawImage(canvas, 0, 0);
+      // Show original image on main canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(originalImage, 0, 0, canvas.width, canvas.height);
       $('#ipToggle').textContent = '👁 查看结果';
     } else {
       updateDisplay();
