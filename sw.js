@@ -1,4 +1,4 @@
-const CACHE = 'keouke-toolkit-v9';
+const CACHE = 'keouke-toolkit-v10';
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -22,7 +22,7 @@ self.addEventListener('install', e => {
       '/js/tools/img-compress.js', '/js/tools/img-convert.js',
       '/js/tools/img-crop.js', '/js/tools/long-screenshot.js',
       '/js/tools/image-inpaint.js',
-      '/js/tools/scanner.js',
+      '/js/tools/scan-king.js',
       '/js/tools/qrcode-gen.js', '/js/tools/qrcode-scan.js',
       '/js/tools/markdown.js',
       '/js/tools/id-photo.js', '/js/tools/table-extract.js',

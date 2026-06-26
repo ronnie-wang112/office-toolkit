@@ -77,7 +77,7 @@ const ToolSections = [
     cat: 'scan',
     color: 'scan',
     tools: [
-      { id:'scanner',     name:'拍照扫描',     icon:'scanner',      desc:'拍照/扫描文档，增强后导出 PDF' },
+      { id:'scan-king',     name:'扫描王',     icon:'scanner',      desc:'实时边缘检测，透视矫正，多页扫描 PDF' },
       { id:'id-photo',  name:'证件照制作',   icon:'id_photo',      desc:'人像抠图换底，标准证件照尺寸，导出PDF/DOCX' },
       { id:'table-extract', name:'表格提取', icon:'table_extract', desc:'拍照识别表格，OCR 提取文字，导出 Excel' },
     ]
