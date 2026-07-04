@@ -20,6 +20,7 @@ const Icons = {
   table_extract: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>',
   qrcode_scan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>',
   price_monitor: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>',
+  douyin_dl: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5,3 19,12 5,21"/></svg>',
   label_gen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>',
   markdown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 8 15 12 7"/><line x1="13" y1="17" x2="21" y2="17"/><line x1="13" y1="13" x2="18" y2="13"/><line x1="18" y1="13" x2="18" y2="17"/></svg>',
 };
@@ -32,6 +33,7 @@ const ToolSections = [
     cat: 'utility',
     color: 'util',
     tools: [
+      { id:'douyin-dl', name:'抖音无水印下载', icon:'douyin_dl', desc:'粘贴文字自动解析抖音链接，无水印下载视频' },
       { id:'price-monitor',name:'材料价格监控', icon:'price_monitor',desc:'美元汇率、黄金原油、塑料原材料实时价格与走势', external: true },
       { id:'label-gen',   name:'克欧克标签制作', icon:'label_gen',  desc:'产品标签自动生成，支持条形码、多品牌', external: true },
       { id:'qrcode-gen',  name:'二维码生成',   icon:'qrcode_gen',   desc:'生成自定义二维码' },
