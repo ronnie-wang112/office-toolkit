@@ -7,6 +7,8 @@ function Tool_douyin_dl(container) {
     (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
     (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
     (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    (url) => `https://cors-anywhere.herokuapp.com/${url}`,
+    (url) => `https://thingproxy.freeboard.io/fetch/${url}`,
   ];
 
   container.innerHTML = `
@@ -132,7 +134,7 @@ function Tool_douyin_dl(container) {
       log(`oEmbed 直连失败: ${e.message}`);
     }
 
-    // Method 2: Try oEmbed via proxy
+    // Method 2: Try oEmbed via proxy  
     const proxyResult = await fetchViaProxy(oembedUrl, true);
     if (proxyResult) {
       log(`oEmbed 代理成功!`);
@@ -181,9 +183,19 @@ function Tool_douyin_dl(container) {
   // ── Get download URL from iesdouyin API ──
   async function getDownloadUrl(videoId) {
     log(`获取下载地址, video_id: ${videoId}`);
-    const apiUrl = `https://www.iesdouyin.com/web/api/v2/aweme/iteminfo/?item_ids=${videoId}`;
-
-    const data = await fetchViaProxy(apiUrl, true);
+    
+    // Try multiple API endpoints
+    const apiUrls = [
+      `https://www.iesdouyin.com/web/api/v2/aweme/iteminfo/?item_ids=${videoId}`,
+      `https://www.douyin.com/aweme/v1/web/aweme/detail/?aweme_id=${videoId}`,
+    ];
+    
+    let data = null;
+    for (const apiUrl of apiUrls) {
+      log(`尝试 API: ${apiUrl.substring(0, 60)}...`);
+      data = await fetchViaProxy(apiUrl, true);
+      if (data && data.item_list) break;
+    }
     if (!data || !data.item_list || !data.item_list[0]) {
       log('iesdouyin API 获取失败');
       return null;
