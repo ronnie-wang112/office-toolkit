@@ -2,7 +2,11 @@
 function Tool_douyin_dl(container) {
   let videos = [];
 
-  // Multiple CORS proxies to try
+  // Local proxy URL (started by start.sh)
+  const LOCAL_PROXY = 'http://localhost:8765';
+  let localProxyAvailable = false;
+
+  // Multiple CORS proxies to try (fallback when local proxy not available)
   const PROXIES = [
     (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
     (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
@@ -78,8 +82,51 @@ function Tool_douyin_dl(container) {
     }
   }
 
-  // ── Try all proxies for a URL ──
+  // ── Check if local proxy is available ──
+  async function checkLocalProxy() {
+    try {
+      const resp = await fetch(`${LOCAL_PROXY}/health`, { signal: AbortSignal.timeout(2000) });
+      localProxyAvailable = resp.ok;
+      log(`本地代理: ${localProxyAvailable ? '✅ 可用' : '❌ 不可用'}`);
+    } catch(e) {
+      localProxyAvailable = false;
+      log(`本地代理: ❌ 未启动 (${e.message})`);
+    }
+  }
+
+  // ── Try local proxy first, then fallback to public proxies ──
   async function fetchViaProxy(url, expectJson = false) {
+    // If local proxy is available, use it for iesdouyin API
+    if (localProxyAvailable && url.includes('iesdouyin.com')) {
+      const videoIdMatch = url.match(/item_ids=(\d+)/);
+      const videoId = videoIdMatch ? videoIdMatch[1] : null;
+      if (videoId) {
+        try {
+          const resp = await fetchWithTimeout(`${LOCAL_PROXY}/api/video?id=${videoId}`, 15000);
+          if (resp.ok) {
+            const data = await resp.json();
+            if (data.success) {
+              log('本地代理成功');
+              // Return in same format as iesdouyin API
+              return {
+                item_list: [{
+                  desc: data.title,
+                  author: { nickname: data.author },
+                  video: {
+                    play_addr: { url_list: [data.video_url] },
+                    cover: { url_list: [data.thumbnail] },
+                  }
+                }]
+              };
+            }
+          }
+        } catch(e) {
+          log(`本地代理失败: ${e.message}`);
+        }
+      }
+    }
+
+    // Fallback to public proxies
     for (let i = 0; i < PROXIES.length; i++) {
       const proxyUrl = PROXIES[i](url);
       log(`尝试代理 #${i+1}: ${proxyUrl.substring(0, 80)}...`);
@@ -109,6 +156,24 @@ function Tool_douyin_dl(container) {
   // ── Resolve short link to full URL and extract video ID ──
   async function resolveShortLink(shortUrl) {
     log(`解析短链接: ${shortUrl}`);
+
+    // Try local proxy first
+    if (localProxyAvailable) {
+      try {
+        const resp = await fetchWithTimeout(
+          `${LOCAL_PROXY}/api/resolve?url=${encodeURIComponent(shortUrl)}`, 10000
+        );
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data.success && data.video_id) {
+            log(`本地代理解析成功, video_id: ${data.video_id}`);
+            return { videoId: data.video_id, title: '', author: '', thumbnail: '' };
+          }
+        }
+      } catch(e) {
+        log(`本地代理解析失败: ${e.message}`);
+      }
+    }
 
     // Method 1: Try oEmbed directly (often has CORS)
     const encodedUrl = encodeURIComponent(shortUrl);
@@ -237,6 +302,7 @@ function Tool_douyin_dl(container) {
     }
 
     log(`找到 ${links.length} 个链接: ${links.join(', ')}`);
+    await checkLocalProxy();
     statusDiv.textContent = `🔍 找到 ${links.length} 个链接，正在解析...`;
     videos = [];
 
