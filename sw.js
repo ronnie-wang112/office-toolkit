@@ -15,7 +15,6 @@ self.addEventListener('install', e => {
       '/js/tools/table-extract.js',
       '/js/tools/qrcode-gen.js', '/js/tools/qrcode-scan.js',
       '/js/tools/markdown.js',
-      '/js/tools/douyin-dl.js',
     ]))
   );
   self.skipWaiting();
