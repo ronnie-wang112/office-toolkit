@@ -1,3 +1,8 @@
+window.onerror = function(msg, url, line) {
+  var el = document.getElementById('cardsGrid') || document.getElementById('toolContainer');
+  if (el) el.innerHTML = '<div style="padding:20px;color:red;text-align:center">❌ JS错误: ' + msg + '<br><small>行 ' + line + '</small></div>';
+};
+
 // ===== KEOUKE Office Tools - Router & App Core (Single Page) =====
 
 // SVG Icon library
