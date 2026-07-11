@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-腾讯云函数 SCF — RunningHub 生图 API 代理
-通过 API 网关触发，国内低延迟访问
+腾讯云函数 SCF Web 函数 — RunningHub 生图 API 代理
 """
 import json
 import urllib.request
@@ -13,37 +12,43 @@ API_BASE = 'https://www.runninghub.cn/openapi/v2'
 API_KEY = os.environ.get('RUNNINGHUB_API_KEY', '')
 
 def main_handler(event, context):
-    """SCF 入口"""
+    """Web 函数入口 — 兼容多种事件格式"""
+    # Web 函数 event 直接是请求体字典
     method = event.get('httpMethod', 'GET')
     path = event.get('path', '/')
-    headers = event.get('headers', {})
-    body_str = event.get('body', '{}') or '{}'
-
+    
+    # 兼容不同格式：body 可能是字符串或已解析
+    body_str = event.get('body', '{}')
+    if body_str is None:
+        body_str = '{}'
+    
     try:
-        body = json.loads(body_str) if body_str else {}
+        body = json.loads(body_str) if isinstance(body_str, str) else body_str
     except:
         body = {}
 
     if method == 'GET' and path == '/health':
-        return _resp(200, {'status': 'ok'})
+        return _resp({'status': 'ok'})
 
     if method == 'GET' and path.startswith('/api/task/'):
         task_id = path.split('/')[-1]
         return _poll(task_id)
 
-    if method == 'POST' and path in ('/api/generate', '/api/text2img'):
-        mode = 'image-to-image' if path == '/api/generate' else 'text-to-image'
-        return _generate(body, mode)
+    if method == 'POST' and path == '/api/generate':
+        return _generate(body, 'image-to-image')
+
+    if method == 'POST' and path == '/api/text2img':
+        return _generate(body, 'text-to-image')
 
     if method == 'OPTIONS':
         return {'statusCode': 204, 'headers': _cors(), 'body': ''}
 
-    return _resp(404, {'success': False, 'error': 'Not found'})
+    return _resp({'error': 'Not found', 'path': path, 'method': method}, 404)
 
 def _generate(body, mode):
     prompt = body.get('prompt', '')
     if not prompt:
-        return _resp(400, {'success': False, 'error': 'Missing prompt'})
+        return _resp({'success': False, 'error': 'Missing prompt'}, 400)
 
     payload = {
         'prompt': prompt,
@@ -55,27 +60,27 @@ def _generate(body, mode):
 
     result = _api('POST', f'{API_BASE}/rhart-image-g-2/{mode}', payload)
     if not result:
-        return _resp(502, {'success': False, 'error': 'API failed'})
+        return _resp({'success': False, 'error': 'API failed'}, 502)
     if result.get('errorCode'):
-        return _resp(200, {'success': False, 'taskId': '', 'error': result.get('errorMessage', 'API error')})
-    return _resp(200, {'success': True, 'taskId': result.get('taskId')})
+        return _resp({'success': False, 'taskId': '', 'error': result.get('errorMessage', 'API error')})
+    return _resp({'success': True, 'taskId': result.get('taskId')})
 
 def _poll(task_id):
     result = _api('POST', f'{API_BASE}/query', {'taskId': task_id})
     if not result:
-        return _resp(502, {'success': False, 'error': 'Query failed'})
+        return _resp({'success': False, 'error': 'Query failed'}, 502)
     if result.get('errorCode'):
-        return _resp(200, {'success': False, 'error': result.get('errorMessage', 'Task error')})
+        return _resp({'success': False, 'error': result.get('errorMessage', 'Task error')})
 
     status = result.get('status')
     if status == 'SUCCESS':
         images = [{'url': r['url'], 'type': r.get('outputType', 'png')}
                   for r in result.get('results', [])
                   if r.get('url') and r.get('outputType') in ('png', 'jpg', 'jpeg', 'webp')]
-        return _resp(200, {'success': True, 'status': 'SUCCESS', 'images': images, 'taskId': task_id})
+        return _resp({'success': True, 'status': 'SUCCESS', 'images': images, 'taskId': task_id})
     if status in ('FAILED', 'ERROR'):
-        return _resp(200, {'success': False, 'error': result.get('errorMessage', 'Failed')})
-    return _resp(200, {'success': True, 'status': status or 'PENDING', 'taskId': task_id})
+        return _resp({'success': False, 'error': result.get('errorMessage', 'Failed')})
+    return _resp({'success': True, 'status': status or 'PENDING', 'taskId': task_id})
 
 def _api(method, url, body=None):
     try:
@@ -100,12 +105,13 @@ def _cors():
         'Access-Control-Allow-Headers': 'Content-Type',
     }
 
-def _resp(code, data):
-    body = json.dumps(data, ensure_ascii=False)
-    headers = _cors()
-    headers['Content-Type'] = 'application/json; charset=utf-8'
+def _resp(data, code=200):
+    body_str = json.dumps(data, ensure_ascii=False)
     return {
         'statusCode': code,
-        'headers': headers,
-        'body': body,
+        'headers': {
+            'Content-Type': 'application/json; charset=utf-8',
+            **_cors(),
+        },
+        'body': body_str,
     }
