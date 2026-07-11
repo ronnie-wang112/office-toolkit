@@ -167,6 +167,7 @@ const OfficeToolkit = {
     document.getElementById('backBtn').style.display = 'flex';
     document.getElementById('cardsGrid').style.display = 'none';
     document.querySelectorAll('.section-header').forEach(h => h.style.display = 'none');
+    document.querySelectorAll('.section-cards').forEach(h => h.style.display = 'none');
     document.getElementById('toolPanel').classList.remove('hidden');
 
     if (tool.external) {
@@ -206,7 +207,11 @@ const OfficeToolkit = {
 
     const loader = toolLoaders[tool.id];
     if (loader) {
-      loader(container);
+      try {
+        loader(container);
+      } catch(e) {
+        container.innerHTML = `<div style="text-align:center;padding:40px;color:red">❌ 加载失败: ${e.message}</div>`;
+      }
     } else {
       container.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted)">工具开发中...</div>`;
     }
@@ -217,6 +222,7 @@ const OfficeToolkit = {
     document.getElementById('toolPanel').classList.add('hidden');
     document.getElementById('cardsGrid').style.display = '';
     document.querySelectorAll('.section-header').forEach(h => h.style.display = '');
+    document.querySelectorAll('.section-cards').forEach(h => h.style.display = '');
     document.getElementById('toolContainer').innerHTML = '';
     window.location.hash = '';
 
