@@ -168,8 +168,6 @@ const OfficeToolkit = {
     const cardsGrid = document.getElementById('cardsGrid');
     const toolPanel = document.getElementById('toolPanel');
     const container = document.getElementById('toolContainer');
-
-    // Quick debug
     container.innerHTML = `<div style="padding:20px;text-align:center">🔧 正在加载 ${tool.name} (id=${tool.id})...</div>`;
 
     if (backBtn) backBtn.style.display = 'flex';
@@ -187,7 +185,6 @@ const OfficeToolkit = {
       return;
     }
 
-    const container = document.getElementById('toolContainer');
     container.innerHTML = '';
 
     const toolLoaders = {
