@@ -43,10 +43,10 @@ const ToolSections = [
       { id:'qrcode-scan', name:'二维码识别',   icon:'qrcode_scan',   desc:'扫描或上传图片识别二维码内容' },
       { id:'markdown',    name:'Markdown 预览',icon:'markdown',      desc:'编辑并实时预览 Markdown' },
     ]
-,
+  },
   {
     name: '图片工具',
-    desc: 'AI生图、压缩、格式转换、裁剪旋转',
+    desc: '压缩、格式转换、裁剪旋转',
     cat: 'image',
     color: 'image',
     tools: [
@@ -56,7 +56,7 @@ const ToolSections = [
       { id:'img-crop',    name:'裁剪旋转',     icon:'img_crop',     desc:'裁剪和旋转图片' },
       { id:'long-screenshot',name:'长截图拼接',  icon:'long_screenshot', desc:'多图纵向拼接，自动检测重合区域' },
     ]
-  },  },
+  },
   {
     name: 'PDF 工具',
     desc: '合并、拆分、压缩、转换 PDF 文件',
@@ -73,7 +73,6 @@ const ToolSections = [
       { id:'batch-img2pdf',name:'批量图片转 PDF',icon:'batch_img2pdf',desc:'多张图片批量合并为 PDF' },
       { id:'word2pdf',    name:'Word 转 PDF',  icon:'word2pdf',     desc:'将 .docx 文档转换为 PDF 文件' },
     ]
-  },
   },
   {
     name: '扫描工具',
