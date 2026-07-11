@@ -41,6 +41,19 @@ const ToolSections = [
     ]
   },
   {
+    name: '图片工具',
+    desc: '压缩、格式转换、裁剪旋转',
+    cat: 'image',
+    color: 'image',
+    tools: [
+      { id:'image-gen',  name:'image2.0生图', icon:'image_gen', desc:'AI图片生成，可选比例和分辨率，支持参考图' },
+      { id:'img-compress',name:'图片压缩',     icon:'img_compress', desc:'压缩图片大小，支持批量处理' },
+      { id:'img-convert', name:'格式转换',     icon:'img_convert',  desc:'PNG/JPG/WebP 格式互转' },
+      { id:'img-crop',    name:'裁剪旋转',     icon:'img_crop',     desc:'裁剪和旋转图片' },
+      { id:'long-screenshot',name:'长截图拼接',  icon:'long_screenshot', desc:'多图纵向拼接，自动检测重合区域' },
+    ]
+  },
+  {
     name: 'PDF 工具',
     desc: '合并、拆分、压缩、转换 PDF 文件',
     cat: 'pdf',
@@ -58,18 +71,7 @@ const ToolSections = [
     ]
   },
   {
-    name: '图片工具',
-    desc: '压缩、格式转换、裁剪旋转',
-    cat: 'image',
-    color: 'image',
-    tools: [
-      { id:'image-gen',  name:'image2.0生图', icon:'image_gen', desc:'AI图片生成，可选比例和分辨率，支持参考图' },
-      { id:'img-compress',name:'图片压缩',     icon:'img_compress', desc:'压缩图片大小，支持批量处理' },
-      { id:'img-convert', name:'格式转换',     icon:'img_convert',  desc:'PNG/JPG/WebP 格式互转' },
-      { id:'img-crop',    name:'裁剪旋转',     icon:'img_crop',     desc:'裁剪和旋转图片' },
-      { id:'long-screenshot',name:'长截图拼接',  icon:'long_screenshot', desc:'多图纵向拼接，自动检测重合区域' },
-    ]
-  },
+    
   {
     name: '扫描工具',
     desc: '拍照扫描、智能增强',
