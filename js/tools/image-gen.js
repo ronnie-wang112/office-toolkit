@@ -100,7 +100,15 @@ function Tool_image_gen(container) {
   function saveHistory(record) {
     history.unshift(record);
     if (history.length > MAX_HISTORY) history = history.slice(0, MAX_HISTORY);
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    try {
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    } catch(e) {
+      // Quota exceeded — strip refImage from oldest records
+      for (let i = history.length - 1; i >= 0; i--) {
+        if (history[i].refImage) { history[i].refImage = null; break; }
+      }
+      try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history)); } catch(e2) {}
+    }
     renderHistory();
   }
 
@@ -117,7 +125,11 @@ function Tool_image_gen(container) {
             <span style="font-size:0.7rem;color:var(--text-muted)">${time}</span>
           </div>
           <div style="font-size:0.78rem;color:var(--text);margin-bottom:8px;line-height:1.4">${h.prompt}</div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-start">
+            ${h.refImage ? `<div style="position:relative;width:80px;height:80px;flex-shrink:0">
+              <img src="${h.refImage}" style="width:80px;height:80px;object-fit:cover;border-radius:4px;border:1px solid var(--border);opacity:0.7" onclick="showLightbox('${h.refImage}')" title="参考图">
+              <span style="position:absolute;top:2px;left:2px;font-size:0.6rem;background:rgba(0,0,0,0.6);color:#fff;padding:1px 4px;border-radius:2px">参考</span>
+            </div>` : ''}
             ${(h.images || []).map((img, i) => `
               <img src="${img.url}" style="width:80px;height:80px;object-fit:cover;border-radius:4px;cursor:pointer;border:1px solid var(--border)"
                    onclick="showLightbox('${img.url}')" title="点击查看大图">
@@ -289,6 +301,7 @@ function Tool_image_gen(container) {
             res: resSel.value,
             time: Date.now(),
             images: pollData.images,
+            refImage: refImageData || null,
           });
           break;
         }
