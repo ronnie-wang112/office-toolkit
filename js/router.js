@@ -78,8 +78,156 @@ const ToolSections = [
     tools: [
       { id:'scan-king',     name:'扫描王',     icon:'scanner',      desc:'实时边缘检测，透视矫正，多页扫描 PDF' },
       { id:'table-extract', name:'表格提取', icon:'table_extract', desc:'拍照识别表格，OCR 提取文字，导出 Excel' },
-    ]
+
+// Flatten for lookup
+const AllTools = ToolSections.flatMap(s => s.tools);
+
+const OfficeToolkit = {
+  currentTool: null,
+
+  init() {
+    Utils.setTheme(Utils.getTheme());
+    this.bindEvents();
+    this.renderAllCards();
+    this.handleHash();
+    window.addEventListener('hashchange', () => this.handleHash());
   },
-];
 
+  bindEvents() {
+    document.getElementById('backBtn').addEventListener('click', () => { this.deactivateTool(); });
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme');
+      Utils.setTheme(current === 'dark' ? 'light' : 'dark');
+    });
+    document.getElementById('infoBtn').addEventListener('click', () => {
+      document.getElementById('aboutModal').classList.remove('hidden');
+    });
+    document.querySelector('.modal-close').addEventListener('click', () => {
+      document.getElementById('aboutModal').classList.add('hidden');
+    });
+    document.getElementById('aboutModal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden');
+    });
+  },
 
+  renderAllCards() {
+    const grid = document.getElementById('cardsGrid');
+    let html = '';
+
+    ToolSections.forEach(section => {
+      const colorClass = section.color;
+      html += `<div class="section-header" data-color="${colorClass}">
+        <h3>${section.name}</h3>
+        <p>${section.desc}</p>
+      </div>`;
+
+      section.tools.forEach(tool => {
+        html += `<div class="tool-card" data-tool="${tool.id}" data-section="${section.cat}">
+          <div class="card-icon-wrap" style="background:var(--${colorClass}-light)">
+            <svg class="card-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              ${GetIcon(tool.icon)}
+            </svg>
+          </div>
+          <div class="card-body">
+            <div class="card-title">${tool.name}</div>
+            <div class="card-desc">${tool.desc}</div>
+          </div>
+        </div>`;
+      });
+    });
+
+    grid.innerHTML = html;
+
+    // Bind click events
+    grid.querySelectorAll('.tool-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const toolId = card.dataset.tool;
+        this.activateTool(toolId);
+      });
+    });
+  },
+
+  activateTool(toolId) {
+    const tool = AllTools.find(t => t.id === toolId);
+    if (!tool) return;
+
+    this.currentTool = tool;
+    window.location.hash = `#/${tool.cat || 'utility'}/${tool.id}`;
+
+    document.getElementById('backBtn').style.display = 'flex';
+    document.getElementById('cardsGrid').style.display = 'none';
+    document.querySelectorAll('.section-header').forEach(h => h.style.display = 'none');
+    document.getElementById('toolPanel').classList.remove('hidden');
+
+    if (tool.external) {
+      const externalPages = {
+        'price-monitor': 'price-monitor.html',
+        'label-gen': 'label-generator.html',
+      };
+      window.location.href = externalPages[tool.id] || 'index.html';
+      return;
+    }
+
+    const container = document.getElementById('toolContainer');
+    container.innerHTML = '';
+
+    const toolLoaders = {
+      'image-gen': Tool_image_gen,
+      'img-compress': Tool_img_compress,
+      'img-convert': Tool_img_convert,
+      'img-crop': Tool_img_crop,
+      'long-screenshot': Tool_long_screenshot,
+      'pdf-merge': Tool_pdf_merge,
+      'pdf-split': Tool_pdf_split,
+      'pdf-extract': Tool_pdf_extract,
+      'pdf-reorder': Tool_pdf_reorder,
+      'pdf-encrypt': Tool_pdf_encrypt,
+      'pdf-compress': Tool_pdf_compress,
+      'img2pdf': Tool_img2pdf,
+      'batch-img2pdf': Tool_batch_img2pdf,
+      'word2pdf': Tool_word2pdf,
+      'bg-remove': Tool_bg_remove,
+      'markdown': Tool_markdown,
+      'qrcode-gen': Tool_qrcode_gen,
+      'qrcode-scan': Tool_qrcode_scan,
+      'table-extract': Tool_table_extract,
+      'scan-king': Tool_scan_king,
+    };
+
+    const loader = toolLoaders[tool.id];
+    if (loader) {
+      loader(container);
+    } else {
+      container.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted)">工具开发中...</div>`;
+    }
+  },
+
+  deactivateTool() {
+    document.getElementById('backBtn').style.display = 'none';
+    document.getElementById('toolPanel').classList.add('hidden');
+    document.getElementById('cardsGrid').style.display = '';
+    document.querySelectorAll('.section-header').forEach(h => h.style.display = '');
+    document.getElementById('toolContainer').innerHTML = '';
+    window.location.hash = '';
+
+    if (this.currentTool && typeof window[`Tool_${this.currentTool.id.replace(/-/g, '_')}_deactivate`] === 'function') {
+      window[`Tool_${this.currentTool.id.replace(/-/g, '_')}_deactivate`]();
+    }
+    this.currentTool = null;
+  },
+
+  handleHash() {
+    const hash = window.location.hash.slice(2);
+    if (!hash) {
+      if (this.currentTool) this.deactivateTool();
+      return;
+    }
+    const parts = hash.split('/');
+    const toolId = parts[parts.length - 1];
+    if (toolId && AllTools.find(t => t.id === toolId)) {
+      this.activateTool(toolId);
+    }
+  },
+};
+
+document.addEventListener('DOMContentLoaded', () => OfficeToolkit.init());
