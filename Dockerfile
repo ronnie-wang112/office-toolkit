@@ -8,12 +8,6 @@ ENV PORT=8080
 
 EXPOSE 8080
 
-RUN echo "=== Files in /app ===" && ls -la /app && echo "=== Python version ===" && python3 --version
+RUN echo "BUILD: files in /app:" && ls /app/server.py /app/index.html
 
-CMD python3 -u -c "
-import os, sys
-print(f'PID={os.getpid()} PORT={os.environ.get(\"PORT\")} CWD={os.getcwd()}', flush=True)
-print(f'Files: {os.listdir(\".\")}', flush=True)
-sys.path.insert(0, '.')
-import server
-"
+CMD sh -c 'echo "START: pid=$$ port=$PORT" && exec python3 -u server.py'
