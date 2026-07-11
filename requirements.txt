@@ -1,0 +1,1 @@
+# No external dependencies needed - proxy.py uses only Python stdlib

@@ -1,6 +1,11 @@
 // ===== Image2.0 生图 — RunningHub ChatGPT Image 2.0 API =====
 function Tool_image_gen(container) {
-  const PROXY_URL = 'http://localhost:8765';
+  // Try deployed proxy first, fallback to localhost
+  const PROXY_URLS = [
+    'https://YOUR_APP.railway.app',  // ← 部署后替换为 Railway 地址
+    'http://localhost:8765',
+  ];
+  let activeProxy = PROXY_URLS[0];
   let generatedImages = [];
   let isGenerating = false;
 
@@ -124,16 +129,23 @@ function Tool_image_gen(container) {
 
   // ── Check proxy ──
   async function checkProxy() {
-    try {
-      const resp = await fetch(`${PROXY_URL}/health`, { signal: AbortSignal.timeout(2000) });
-      proxyAvailable = resp.ok;
-    } catch(e) {
-      proxyAvailable = false;
+    for (const url of PROXY_URLS) {
+      try {
+        const resp = await fetch(`${url}/health`, { signal: AbortSignal.timeout(3000) });
+        if (resp.ok) {
+          activeProxy = url;
+          proxyAvailable = true;
+          break;
+        }
+      } catch(e) {}
     }
-    proxyStatus.innerHTML = proxyAvailable
-      ? '🟢 生图代理已连接（API 密钥安全保护中）'
-      : '🔴 生图代理未启动 — 请运行 ./start.sh 启动本地代理<br><small style="color:var(--text-muted)">代理负责安全调用 API，密钥不会暴露到浏览器</small>';
-    proxyStatus.style.background = proxyAvailable ? 'var(--bg)' : '#FEF2F2';
+    if (proxyAvailable) {
+      proxyStatus.innerHTML = `🟢 生图代理已连接<br><small style="color:var(--text-muted)">${activeProxy}</small>`;
+      proxyStatus.style.background = 'var(--bg)';
+    } else {
+      proxyStatus.innerHTML = '🔴 生图代理未连接<br><small style="color:var(--text-muted)">请运行 ./start.sh 或部署云端代理</small>';
+      proxyStatus.style.background = '#FEF2F2';
+    }
     return proxyAvailable;
   }
 
@@ -169,7 +181,7 @@ function Tool_image_gen(container) {
       // Submit task
       statusDiv.innerHTML = '<div class="progress-bar"><div class="progress-bar-fill" style="width:50%"></div></div><div class="progress-text">AI 正在生图...</div>';
 
-      const resp = await fetch(`${PROXY_URL}/api/generate`, {
+      const resp = await fetch(`${activeProxy}/api/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -192,7 +204,7 @@ function Tool_image_gen(container) {
         const pct = Math.min(90, 30 + (attempts / maxAttempts) * 60);
         statusDiv.innerHTML = `<div class="progress-bar"><div class="progress-bar-fill" style="width:${pct}%"></div></div><div class="progress-text">生成中... (${Math.round(attempts * 3)}秒)</div>`;
 
-        const pollResp = await fetch(`${PROXY_URL}/api/task/${data.taskId}`);
+        const pollResp = await fetch(`${activeProxy}/api/task/${data.taskId}`);
         const pollData = await pollResp.json();
 
         if (!pollData.success) {
