@@ -1,12 +1,11 @@
 FROM python:3.12-slim
 
-ENV PYTHONUNBUFFERED=1
+WORKDIR /app
+COPY . .
 
-CMD python3 -c "
-import http.server, os
-port = int(os.environ.get('PORT', 8080))
-print(f'MINIMAL server on port {port}', flush=True)
-http.server.HTTPServer(('0.0.0.0', port),
-    lambda *a: http.server.SimpleHTTPRequestHandler(*a, directory='/')
-).serve_forever()
-"
+ENV PYTHONUNBUFFERED=1
+ENV PORT=8080
+
+EXPOSE 8080
+
+CMD sh -c 'echo "START: pid=$$ port=$PORT" && exec python3 -u server.py'

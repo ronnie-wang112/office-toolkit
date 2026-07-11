@@ -2,8 +2,8 @@
 function Tool_image_gen(container) {
   // Try deployed proxy first, fallback to localhost
   const PROXY_URLS = [
-    'https://YOUR_APP.railway.app',  // ← 部署后替换为 Railway 地址
-    'http://localhost:8765',
+    '',  // 同源部署（Railway 等云端，API 和静态文件同一服务）
+    'http://localhost:8765',  // 本地开发
   ];
   let activeProxy = PROXY_URLS[0];
   let generatedImages = [];
