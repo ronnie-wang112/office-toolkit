@@ -1,11 +1,10 @@
-window.onerror = function(msg, url, line) {
-  var el = document.getElementById('cardsGrid') || document.getElementById('toolContainer');
-  if (el) el.innerHTML = '<div style="padding:20px;color:red;text-align:center">❌ JS错误: ' + msg + '<br><small>行 ' + line + '</small></div>';
-};
-
 // ===== KEOUKE Office Tools - Router & App Core (Single Page) =====
 
 // SVG Icon library
+function GetIcon(name) {
+  return Icons[name] || Icons.markdown || '';
+}
+
 const Icons = {
   pdf_merge: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="12" y2="12"/><line x1="15" y1="15" x2="12" y2="12"/></svg>',
   pdf_split: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16"/><path d="M18 6h4v16a2 2 0 0 1-2 2H6"/><line x1="10" y1="9" x2="10" y2="17"/><line x1="14" y1="9" x2="14" y2="15"/></svg>',
@@ -31,10 +30,6 @@ const Icons = {
 };
 
 // Tool registry — all tools on one page, grouped by category
-function GetIcon(name) {
-  return Icons[name] || Icons.markdown || '';
-}
-
 const ToolSections = [
   {
     name: '实用工具',
@@ -48,7 +43,7 @@ const ToolSections = [
       { id:'qrcode-scan', name:'二维码识别',   icon:'qrcode_scan',   desc:'扫描或上传图片识别二维码内容' },
       { id:'markdown',    name:'Markdown 预览',icon:'markdown',      desc:'编辑并实时预览 Markdown' },
     ]
-  },
+,
   {
     name: '图片工具',
     desc: 'AI生图、压缩、格式转换、裁剪旋转',
@@ -61,7 +56,7 @@ const ToolSections = [
       { id:'img-crop',    name:'裁剪旋转',     icon:'img_crop',     desc:'裁剪和旋转图片' },
       { id:'long-screenshot',name:'长截图拼接',  icon:'long_screenshot', desc:'多图纵向拼接，自动检测重合区域' },
     ]
-  },
+  },  },
   {
     name: 'PDF 工具',
     desc: '合并、拆分、压缩、转换 PDF 文件',
@@ -78,6 +73,7 @@ const ToolSections = [
       { id:'batch-img2pdf',name:'批量图片转 PDF',icon:'batch_img2pdf',desc:'多张图片批量合并为 PDF' },
       { id:'word2pdf',    name:'Word 转 PDF',  icon:'word2pdf',     desc:'将 .docx 文档转换为 PDF 文件' },
     ]
+  },
   },
   {
     name: '扫描工具',
@@ -131,130 +127,105 @@ const OfficeToolkit = {
       html += `<div class="section-header" data-color="${colorClass}">
         <h3>${section.name}</h3>
         <p>${section.desc}</p>
-      </div>
-      <div class="section-cards">`;
-
-      section.tools.forEach(tool => {
-        html += `<div class="tool-card" data-tool="${tool.id}" data-section="${section.cat}">
-          <div class="card-icon-wrap" style="background:var(--${colorClass}-light)">
-            <svg class="card-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              ${GetIcon(tool.icon)}
-            </svg>
-          </div>
-          <div class="card-body">
-            <div class="card-title">${tool.name}</div>
-            <div class="card-desc">${tool.desc}</div>
-          </div>
-        </div>`;
+      </div>`;
+      html += '<div class="cards-grid">';
+      section.tools.forEach(t => {
+        html += `
+          <div class="tool-card" data-tool="${t.id}" data-category="${colorClass}">
+            <div class="card-icon-wrap">${Icons[t.icon] || ''}</div>
+            <div class="card-body">
+              <div class="card-title">${t.name}</div>
+              <div class="card-desc">${t.desc}</div>
+            </div>
+          </div>`;
       });
-
       html += '</div>';
     });
 
     grid.innerHTML = html;
-
-    // Bind click events using event delegation
-    grid.onclick = function(e) {
+    grid.addEventListener('click', (e) => {
       const card = e.target.closest('.tool-card');
-      if (card) {
-        const toolId = card.dataset.tool;
-        OfficeToolkit.activateTool(toolId);
-      }
-    };
+      if (!card) return;
+      this.activateTool(card.dataset.tool);
+    });
   },
 
-  activateTool(toolId) {
+  async activateTool(toolId) {
     const tool = AllTools.find(t => t.id === toolId);
     if (!tool) return;
 
-    this.currentTool = tool;
-    window.location.hash = `#/${tool.cat || 'utility'}/${tool.id}`;
-
-    const backBtn = document.getElementById('backBtn');
-    const cardsGrid = document.getElementById('cardsGrid');
-    const toolPanel = document.getElementById('toolPanel');
-    const container = document.getElementById('toolContainer');
-    container.innerHTML = `<div style="padding:20px;text-align:center">🔧 正在加载 ${tool.name} (id=${tool.id})...</div>`;
-
-    if (backBtn) backBtn.style.display = 'flex';
-    if (cardsGrid) cardsGrid.style.display = 'none';
-    document.querySelectorAll('.section-header').forEach(h => h.style.display = 'none');
-    document.querySelectorAll('.section-cards').forEach(h => h.style.display = 'none');
-    if (toolPanel) toolPanel.classList.remove('hidden');
-
     if (tool.external) {
       const externalPages = {
-        'price-monitor': 'price-monitor.html',
         'label-gen': 'label-generator.html',
+        'price-monitor': 'price-monitor.html'
       };
       window.location.href = externalPages[tool.id] || 'index.html';
       return;
     }
 
-    container.innerHTML = '';
+    this.currentTool = tool;
+    document.getElementById('cardsGrid').classList.add('hidden');
+    document.getElementById('toolWorkspace').classList.remove('hidden');
 
-    const toolLoaders = {
-      'image-gen': Tool_image_gen,
-      'img-compress': Tool_img_compress,
-      'img-convert': Tool_img_convert,
-      'img-crop': Tool_img_crop,
-      'long-screenshot': Tool_long_screenshot,
-      'pdf-merge': Tool_pdf_merge,
-      'pdf-split': Tool_pdf_split,
-      'pdf-extract': Tool_pdf_extract,
-      'pdf-reorder': Tool_pdf_reorder,
-      'pdf-encrypt': Tool_pdf_encrypt,
-      'pdf-compress': Tool_pdf_compress,
-      'img2pdf': Tool_img2pdf,
-      'batch-img2pdf': Tool_batch_img2pdf,
-      'word2pdf': Tool_word2pdf,
-      'bg-remove': Tool_bg_remove,
-      'markdown': Tool_markdown,
-      'qrcode-gen': Tool_qrcode_gen,
-      'qrcode-scan': Tool_qrcode_scan,
-      'table-extract': Tool_table_extract,
-      'scan-king': Tool_scan_king,
-    };
+    const container = document.getElementById('toolContainer');
+    container.innerHTML = `
+      <h2 style="display:flex;align-items:center;gap:8px;font-size:1.2rem;font-weight:700;margin-bottom:4px;">
+        <span style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;">${Icons[tool.icon]||''}</span>
+        ${tool.name}
+      </h2>
+      <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:20px;">${tool.desc}</p>
+      <div id="toolBody">
+        <div style="text-align:center;padding:40px">
+          <div class="progress-bar"><div class="progress-bar-fill" style="width:50%"></div></div>
+          <div class="progress-text">正在加载工具...</div>
+        </div>
+      </div>
+    `;
 
-    const loader = toolLoaders[tool.id];
-    if (loader) {
-      try {
-        loader(container);
-      } catch(e) {
-        container.innerHTML = `<div style="text-align:center;padding:40px;color:red">❌ 加载失败: ${e.message}</div>`;
-      }
-    } else {
-      container.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted)">工具开发中...</div>`;
+    // Load dependencies on demand
+    try {
+      await LibLoader.loadFor(tool.id);
+    } catch(e) {
+      document.getElementById('toolBody').innerHTML =
+        '<p style="color:var(--warning);text-align:center;padding:20px">⚠️ 加载失败: ' + e.message + '</p>';
+      return;
     }
+
+    const toolBody = document.getElementById('toolBody');
+    const fnName = `Tool_${tool.id.replace(/-/g, '_')}`;
+    if (typeof window[fnName] === 'function') {
+      window[fnName](toolBody);
+    } else {
+      toolBody.innerHTML = '<p style="color:var(--text-muted)">此工具尚未实现</p>';
+    }
+
+    // Find section for hash
+    const section = ToolSections.find(s => s.tools.includes(tool));
+    const catMap = { pdf:'pdf', image:'image', scan:'scan', utility:'utility' };
+    window.location.hash = `#/${catMap[section.cat] || section.cat}/${tool.id}`;
   },
 
   deactivateTool() {
-    document.getElementById('backBtn').style.display = 'none';
-    document.getElementById('toolPanel').classList.add('hidden');
-    document.getElementById('cardsGrid').style.display = '';
-    document.querySelectorAll('.section-header').forEach(h => h.style.display = '');
-    document.querySelectorAll('.section-cards').forEach(h => h.style.display = '');
-    document.getElementById('toolContainer').innerHTML = '';
-    window.location.hash = '';
-
-    if (this.currentTool && typeof window[`Tool_${this.currentTool.id.replace(/-/g, '_')}_deactivate`] === 'function') {
-      window[`Tool_${this.currentTool.id.replace(/-/g, '_')}_deactivate`]();
+    if (this.currentTool) {
+      const fnName = `Tool_${this.currentTool.id.replace(/-/g, '_')}_deactivate`;
+      if (typeof window[fnName] === 'function') window[fnName]();
     }
     this.currentTool = null;
+    document.getElementById('toolWorkspace').classList.add('hidden');
+    document.getElementById('cardsGrid').classList.remove('hidden');
+    window.location.hash = '';
   },
 
   handleHash() {
     const hash = window.location.hash.slice(2);
-    if (!hash) {
-      if (this.currentTool) this.deactivateTool();
-      return;
+    if (!hash) return;
+    const tool = AllTools.find(t => {
+      const section = ToolSections.find(s => s.tools.includes(t));
+      const catMap = { pdf:'pdf', image:'image', scan:'scan', utility:'utility' };
+      return hash === `${catMap[section.cat] || section.cat}/${t.id}`;
+    });
+    if (tool) {
+      this.activateTool(tool.id);
     }
-    const parts = hash.split('/');
-    const toolId = parts[parts.length - 1];
-    if (toolId && AllTools.find(t => t.id === toolId)) {
-      this.activateTool(toolId);
-    }
-  },
+  }
 };
-
-document.addEventListener('DOMContentLoaded', () => OfficeToolkit.init());
