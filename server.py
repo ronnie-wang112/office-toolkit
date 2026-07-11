@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Railway 统一服务入口：静态文件服务 + RunningHub API 代理
+克欧克办公工具 - Railway 统一服务
+静态文件服务 + RunningHub API 代理
 """
 import http.server
 import urllib.request
@@ -9,6 +10,7 @@ import json
 import ssl
 import os
 import sys
+import traceback
 
 PORT = int(os.environ.get('PORT', 8080))
 API_BASE = 'https://www.runninghub.cn/openapi/v2'
@@ -137,6 +139,11 @@ class Handler(http.server.BaseHTTPRequestHandler):
         pass
 
 if __name__ == '__main__':
-    print(f'🚀 服务启动 port={PORT}', flush=True)
-    httpd = http.server.HTTPServer(('0.0.0.0', PORT), Handler)
-    httpd.serve_forever()
+    try:
+        print(f'🚀 服务启动 port={PORT}', flush=True)
+        httpd = http.server.HTTPServer(('0.0.0.0', PORT), Handler)
+        httpd.serve_forever()
+    except Exception as e:
+        print(f'FATAL: {e}', flush=True)
+        traceback.print_exc()
+        sys.exit(1)
