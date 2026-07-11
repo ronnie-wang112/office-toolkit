@@ -4,7 +4,7 @@ function Tool_image_gen(container) {
   const MAX_HISTORY = 20;
 
   const PROXY_URLS = [
-    'https://1316850592-iybdufg8up.ap-nanjing.tencentscf.com',
+    'https://1316850592-flaadcrz81.ap-nanjing.tencentscf.com',
     'https://office-toolkit-production.up.railway.app',
     'http://localhost:8765',
   ];
