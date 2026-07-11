@@ -1,7 +1,7 @@
 // ===== Image2.0 生图 — RunningHub ChatGPT Image 2.0 API =====
 function Tool_image_gen(container) {
   const HISTORY_KEY = 'image_gen_history';
-  const MAX_HISTORY = 10;
+  const MAX_HISTORY = 20;
 
   const PROXY_URLS = [
     '',
