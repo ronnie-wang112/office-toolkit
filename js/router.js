@@ -42,7 +42,7 @@ const ToolSections = [
   },
   {
     name: '图片工具',
-    desc: '压缩、格式转换、裁剪旋转',
+    desc: 'AI生图、压缩、格式转换、裁剪旋转',
     cat: 'image',
     color: 'image',
     tools: [
@@ -71,8 +71,6 @@ const ToolSections = [
     ]
   },
   {
-    
-  {
     name: '扫描工具',
     desc: '拍照扫描、智能增强',
     cat: 'scan',
@@ -84,145 +82,4 @@ const ToolSections = [
   },
 ];
 
-// Flatten for lookup
-const AllTools = ToolSections.flatMap(s => s.tools);
 
-const OfficeToolkit = {
-  currentTool: null,
-
-  init() {
-    Utils.setTheme(Utils.getTheme());
-    this.bindEvents();
-    this.renderAllCards();
-    this.handleHash();
-    window.addEventListener('hashchange', () => this.handleHash());
-  },
-
-  bindEvents() {
-    document.getElementById('backBtn').addEventListener('click', () => { this.deactivateTool(); });
-    document.getElementById('themeToggle').addEventListener('click', () => {
-      const current = document.documentElement.getAttribute('data-theme');
-      Utils.setTheme(current === 'dark' ? 'light' : 'dark');
-    });
-    document.getElementById('infoBtn').addEventListener('click', () => {
-      document.getElementById('aboutModal').classList.remove('hidden');
-    });
-    document.querySelector('.modal-close').addEventListener('click', () => {
-      document.getElementById('aboutModal').classList.add('hidden');
-    });
-    document.getElementById('aboutModal').addEventListener('click', (e) => {
-      if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden');
-    });
-  },
-
-  renderAllCards() {
-    const grid = document.getElementById('cardsGrid');
-    let html = '';
-
-    ToolSections.forEach(section => {
-      const colorClass = section.color;
-      html += `<div class="section-header" data-color="${colorClass}">
-        <h3>${section.name}</h3>
-        <p>${section.desc}</p>
-      </div>`;
-      html += '<div class="cards-grid">';
-      section.tools.forEach(t => {
-        html += `
-          <div class="tool-card" data-tool="${t.id}" data-category="${colorClass}">
-            <div class="card-icon-wrap">${Icons[t.icon] || ''}</div>
-            <div class="card-body">
-              <div class="card-title">${t.name}</div>
-              <div class="card-desc">${t.desc}</div>
-            </div>
-          </div>`;
-      });
-      html += '</div>';
-    });
-
-    grid.innerHTML = html;
-    grid.addEventListener('click', (e) => {
-      const card = e.target.closest('.tool-card');
-      if (!card) return;
-      this.activateTool(card.dataset.tool);
-    });
-  },
-
-  async activateTool(toolId) {
-    const tool = AllTools.find(t => t.id === toolId);
-    if (!tool) return;
-
-    if (tool.external) {
-      const externalPages = {
-        'label-gen': 'label-generator.html',
-        'price-monitor': 'price-monitor.html'
-      };
-      window.location.href = externalPages[tool.id] || 'index.html';
-      return;
-    }
-
-    this.currentTool = tool;
-    document.getElementById('cardsGrid').classList.add('hidden');
-    document.getElementById('toolWorkspace').classList.remove('hidden');
-
-    const container = document.getElementById('toolContainer');
-    container.innerHTML = `
-      <h2 style="display:flex;align-items:center;gap:8px;font-size:1.2rem;font-weight:700;margin-bottom:4px;">
-        <span style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;">${Icons[tool.icon]||''}</span>
-        ${tool.name}
-      </h2>
-      <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:20px;">${tool.desc}</p>
-      <div id="toolBody">
-        <div style="text-align:center;padding:40px">
-          <div class="progress-bar"><div class="progress-bar-fill" style="width:50%"></div></div>
-          <div class="progress-text">正在加载工具...</div>
-        </div>
-      </div>
-    `;
-
-    // Load dependencies on demand
-    try {
-      await LibLoader.loadFor(tool.id);
-    } catch(e) {
-      document.getElementById('toolBody').innerHTML =
-        '<p style="color:var(--warning);text-align:center;padding:20px">⚠️ 加载失败: ' + e.message + '</p>';
-      return;
-    }
-
-    const toolBody = document.getElementById('toolBody');
-    const fnName = `Tool_${tool.id.replace(/-/g, '_')}`;
-    if (typeof window[fnName] === 'function') {
-      window[fnName](toolBody);
-    } else {
-      toolBody.innerHTML = '<p style="color:var(--text-muted)">此工具尚未实现</p>';
-    }
-
-    // Find section for hash
-    const section = ToolSections.find(s => s.tools.includes(tool));
-    const catMap = { pdf:'pdf', image:'image', scan:'scan', utility:'utility' };
-    window.location.hash = `#/${catMap[section.cat] || section.cat}/${tool.id}`;
-  },
-
-  deactivateTool() {
-    if (this.currentTool) {
-      const fnName = `Tool_${this.currentTool.id.replace(/-/g, '_')}_deactivate`;
-      if (typeof window[fnName] === 'function') window[fnName]();
-    }
-    this.currentTool = null;
-    document.getElementById('toolWorkspace').classList.add('hidden');
-    document.getElementById('cardsGrid').classList.remove('hidden');
-    window.location.hash = '';
-  },
-
-  handleHash() {
-    const hash = window.location.hash.slice(2);
-    if (!hash) return;
-    const tool = AllTools.find(t => {
-      const section = ToolSections.find(s => s.tools.includes(t));
-      const catMap = { pdf:'pdf', image:'image', scan:'scan', utility:'utility' };
-      return hash === `${catMap[section.cat] || section.cat}/${t.id}`;
-    });
-    if (tool) {
-      this.activateTool(tool.id);
-    }
-  }
-};
