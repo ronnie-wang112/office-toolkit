@@ -210,9 +210,21 @@ body {
    CARDS GRID
    ======================================== */
 .cards-grid {
+  display: flex !important;
+  flex-direction: column;
+  gap: 0;
+}
+.section-cards {
   display: grid !important;
   grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
   gap: 14px;
+}
+
+@media (max-width:768px) {
+  .section-cards { grid-template-columns:repeat(2, 1fr) !important; gap:10px; }
+}
+@media (max-width:480px) {
+  .section-cards { grid-template-columns:repeat(2, 1fr) !important; gap:8px; }
 }
 
 .tool-card {

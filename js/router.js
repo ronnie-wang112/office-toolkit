@@ -126,7 +126,8 @@ const OfficeToolkit = {
       html += `<div class="section-header" data-color="${colorClass}">
         <h3>${section.name}</h3>
         <p>${section.desc}</p>
-      </div>`;
+      </div>
+      <div class="section-cards">`;
 
       section.tools.forEach(tool => {
         html += `<div class="tool-card" data-tool="${tool.id}" data-section="${section.cat}">
@@ -141,12 +142,14 @@ const OfficeToolkit = {
           </div>
         </div>`;
       });
+
+      html += '</div>';
     });
 
     grid.innerHTML = html;
 
     // Bind click events
-    grid.querySelectorAll('.tool-card').forEach(card => {
+    grid.querySelectorAll('.section-cards .tool-card').forEach(card => {
       card.addEventListener('click', () => {
         const toolId = card.dataset.tool;
         this.activateTool(toolId);
