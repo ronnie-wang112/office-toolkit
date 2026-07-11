@@ -26,6 +26,10 @@ const Icons = {
 };
 
 // Tool registry — all tools on one page, grouped by category
+function GetIcon(name) {
+  return Icons[name] || Icons.markdown || '';
+}
+
 const ToolSections = [
   {
     name: '实用工具',
