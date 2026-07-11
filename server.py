@@ -79,7 +79,6 @@ class Handler(http.server.BaseHTTPRequestHandler):
             payload['imageUrls'] = [body['imageData']] if body.get('imageData') else []
         print(f'→ 生图 [{mode}]: {prompt[:60]}...')
         result = self._api("POST", endpoint, payload)
-        print(f"→ RunningHub response: {json.dumps(result, ensure_ascii=False)[:500]}", flush=True)
         if result:
             if result.get('errorCode'):
                 return self._json({'success': False, 'taskId': '', 'error': result.get('errorMessage', 'API error')})
@@ -92,7 +91,6 @@ class Handler(http.server.BaseHTTPRequestHandler):
             return self._error(502, 'Query failed')
         if result.get('errorCode'):
             return self._json({'success': False, 'error': result.get('errorMessage', 'Task error')})
-        print(f'⏳ poll {task_id[:12]}... full={json.dumps(result, ensure_ascii=False)[:300]}', flush=True)
         status = result.get('status')
         if status == 'SUCCESS':
             images = [{'url': r['url'], 'type': r.get('outputType', 'png')}

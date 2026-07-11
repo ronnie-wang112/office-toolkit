@@ -1,13 +1,16 @@
 // ===== Image2.0 生图 — RunningHub ChatGPT Image 2.0 API =====
 function Tool_image_gen(container) {
-  // Try deployed proxy first, fallback to localhost
+  const HISTORY_KEY = 'image_gen_history';
+  const MAX_HISTORY = 10;
+
   const PROXY_URLS = [
-    '',  // 同源部署（Railway 等云端，API 和静态文件同一服务）
-    'http://localhost:8765',  // 本地开发
+    '',
+    'http://localhost:8765',
   ];
   let activeProxy = PROXY_URLS[0];
   let generatedImages = [];
   let isGenerating = false;
+  let history = loadHistory();
 
   const ASPECT_RATIOS = [
     { v: '1:1', label: '1:1 正方形' },
@@ -63,8 +66,9 @@ function Tool_image_gen(container) {
       </div>
 
       <div id="igStatus" style="text-align:center;margin-bottom:12px"></div>
-
       <div id="igResults" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px"></div>
+
+      <div id="igHistory" style="margin-top:24px"></div>
 
       <div id="igProxyStatus" style="margin-top:16px;padding:8px 12px;border-radius:8px;font-size:0.78rem;text-align:center"></div>
     </div>
@@ -81,9 +85,73 @@ function Tool_image_gen(container) {
   const previewCanvas = $('#igPreviewCanvas');
   const imageLabel = $('#igImageLabel');
   const clearImgBtn = $('#igClearImg');
+  const historyDiv = $('#igHistory');
 
   let refImageData = null;
   let proxyAvailable = false;
+
+  // ── History ──
+  function loadHistory() {
+    try {
+      return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+    } catch(e) { return []; }
+  }
+
+  function saveHistory(record) {
+    history.unshift(record);
+    if (history.length > MAX_HISTORY) history = history.slice(0, MAX_HISTORY);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    renderHistory();
+  }
+
+  function renderHistory() {
+    if (history.length === 0) { historyDiv.innerHTML = ''; return; }
+    let html = '<div style="font-size:0.85rem;font-weight:600;margin-bottom:8px;color:var(--text-muted)">📋 历史记录</div>';
+    history.forEach((h, idx) => {
+      const modeLabel = h.mode === 'text-to-image' ? '文生图' : '图生图';
+      const time = new Date(h.time).toLocaleString('zh-CN');
+      html += `
+        <div style="border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;background:var(--bg-card)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span style="font-size:0.78rem;font-weight:600">${modeLabel} · ${h.ratio} · ${h.res}</span>
+            <span style="font-size:0.7rem;color:var(--text-muted)">${time}</span>
+          </div>
+          <div style="font-size:0.78rem;color:var(--text);margin-bottom:8px;line-height:1.4">${h.prompt}</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            ${(h.images || []).map((img, i) => `
+              <img src="${img.url}" style="width:80px;height:80px;object-fit:cover;border-radius:4px;cursor:pointer;border:1px solid var(--border)"
+                   onclick="window.open('${img.url}','_blank')" title="点击查看大图">
+            `).join('')}
+          </div>
+          <div style="margin-top:6px;display:flex;gap:4px">
+            <button class="btn btn-sm hist-replay-btn" data-idx="${idx}" style="font-size:0.72rem;padding:2px 8px">🔄 复用提示词</button>
+            <button class="btn btn-sm hist-del-btn" data-idx="${idx}" style="font-size:0.72rem;padding:2px 8px;color:var(--danger)">🗑</button>
+          </div>
+        </div>`;
+    });
+    historyDiv.innerHTML = html;
+
+    // Replay button
+    historyDiv.querySelectorAll('.hist-replay-btn').forEach(btn => {
+      btn.onclick = function() {
+        const h = history[parseInt(this.dataset.idx)];
+        promptEl.value = h.prompt;
+        charCount.textContent = h.prompt.length;
+        ratioSel.value = h.ratio;
+        resSel.value = h.res;
+        promptEl.scrollIntoView({ behavior: 'smooth' });
+      };
+    });
+
+    // Delete button
+    historyDiv.querySelectorAll('.hist-del-btn').forEach(btn => {
+      btn.onclick = function() {
+        history.splice(parseInt(this.dataset.idx), 1);
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+        renderHistory();
+      };
+    });
+  }
 
   // ── Character count ──
   promptEl.addEventListener('input', () => {
@@ -98,12 +166,10 @@ function Tool_image_gen(container) {
     imageLabel.textContent = f.name;
     clearImgBtn.style.display = 'inline-block';
 
-    // Preview
     const reader = new FileReader();
     reader.onload = () => {
       const img = new Image();
       img.onload = () => {
-        // Scale for preview
         const maxW = 200;
         let w = img.width, h = img.height;
         if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
@@ -113,13 +179,12 @@ function Tool_image_gen(container) {
         previewCanvas.style.display = 'block';
       };
       img.src = reader.result;
-
-      // Store as base64 for API
       refImageData = reader.result;
     };
     reader.readAsDataURL(f);
   };
-  clearImgBtn.onclick = () => {
+
+  $('#igClearImg').onclick = () => {
     refImageData = null;
     previewCanvas.style.display = 'none';
     imageLabel.textContent = '未选择';
@@ -131,7 +196,7 @@ function Tool_image_gen(container) {
   async function checkProxy() {
     for (const url of PROXY_URLS) {
       try {
-        const resp = await fetch(`${url}/health`, { signal: AbortSignal.timeout(3000) });
+        const resp = await fetch(`${url}/health`);
         if (resp.ok) {
           activeProxy = url;
           proxyAvailable = true;
@@ -140,7 +205,7 @@ function Tool_image_gen(container) {
       } catch(e) {}
     }
     if (proxyAvailable) {
-      proxyStatus.innerHTML = `🟢 生图代理已连接<br><small style="color:var(--text-muted)">${activeProxy}</small>`;
+      proxyStatus.innerHTML = `🟢 生图代理已连接<br><small style="color:var(--text-muted)">${activeProxy || '同源部署'}</small>`;
       proxyStatus.style.background = 'var(--bg)';
     } else {
       proxyStatus.innerHTML = '🔴 生图代理未连接<br><small style="color:var(--text-muted)">请运行 ./start.sh 或部署云端代理</small>';
@@ -178,7 +243,6 @@ function Tool_image_gen(container) {
         body.imageData = refImageData;
       }
 
-      // Submit task
       statusDiv.innerHTML = '<div class="progress-bar"><div class="progress-bar-fill" style="width:50%"></div></div><div class="progress-text">AI 正在生图...</div>';
 
       const apiPath = refImageData ? '/api/generate' : '/api/text2img';
@@ -193,7 +257,6 @@ function Tool_image_gen(container) {
         throw new Error(data.error || '提交失败');
       }
 
-      // Poll for result
       let attempts = 0;
       const maxAttempts = 200;
       const pollInterval = 3000;
@@ -217,6 +280,16 @@ function Tool_image_gen(container) {
           renderResults(pollData.images);
           statusDiv.innerHTML = '<div style="color:var(--success)">✅ 生成完成！</div>';
           Utils.toast(`生成 ${pollData.images.length} 张图片`, 'success');
+
+          // Save to history
+          saveHistory({
+            prompt,
+            mode: refImageData ? 'image-to-image' : 'text-to-image',
+            ratio: ratioSel.value,
+            res: resSel.value,
+            time: Date.now(),
+            images: pollData.images,
+          });
           break;
         }
       }
@@ -239,7 +312,6 @@ function Tool_image_gen(container) {
   function renderResults(images) {
     let html = '';
     images.forEach((img, i) => {
-      // Use proxy to fetch image (avoid CORS issues with the CDN)
       html += `
         <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--bg-card)">
           <img src="${img.url}" style="width:100%;display:block" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 200%22><rect fill=%22%23eee%22 width=%22200%22 height=%22200%22/><text x=%22100%22 y=%22105%22 text-anchor=%22middle%22 fill=%22%23999%22 font-size=%2240%22>🖼</text></svg>'">
@@ -251,7 +323,6 @@ function Tool_image_gen(container) {
     });
     resultsDiv.innerHTML = html;
 
-    // Bind download buttons
     resultsDiv.querySelectorAll('.ig-dl-btn').forEach(btn => {
       btn.onclick = async function() {
         const url = this.dataset.url;
@@ -263,7 +334,6 @@ function Tool_image_gen(container) {
           Utils.download(blob, `image2.0_${Date.now()}.png`);
           this.textContent = '✅ 完成';
         } catch(e) {
-          // Fallback: open in new tab
           window.open(url, '_blank');
           this.textContent = '📥 重试';
           this.disabled = false;
@@ -271,7 +341,6 @@ function Tool_image_gen(container) {
       };
     });
 
-    // Bind view buttons
     resultsDiv.querySelectorAll('.ig-view-btn').forEach(btn => {
       btn.onclick = function() {
         window.open(this.dataset.url, '_blank');
@@ -294,6 +363,7 @@ function Tool_image_gen(container) {
 
   // ── Init ──
   checkProxy();
+  renderHistory();
 }
 
 function Tool_image_gen_deactivate() {}
