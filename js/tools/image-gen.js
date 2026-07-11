@@ -120,7 +120,7 @@ function Tool_image_gen(container) {
           <div style="display:flex;gap:6px;flex-wrap:wrap">
             ${(h.images || []).map((img, i) => `
               <img src="${img.url}" style="width:80px;height:80px;object-fit:cover;border-radius:4px;cursor:pointer;border:1px solid var(--border)"
-                   onclick="window.open('${img.url}','_blank')" title="点击查看大图">
+                   onclick="showLightbox('${img.url}')" title="点击查看大图">
             `).join('')}
           </div>
           <div style="margin-top:6px;display:flex;gap:4px">
@@ -343,7 +343,7 @@ function Tool_image_gen(container) {
 
     resultsDiv.querySelectorAll('.ig-view-btn').forEach(btn => {
       btn.onclick = function() {
-        window.open(this.dataset.url, '_blank');
+        showLightbox(this.dataset.url);
       };
     });
   }
@@ -359,6 +359,19 @@ function Tool_image_gen(container) {
     previewCanvas.style.display = 'none';
     imageLabel.textContent = '未选择';
     clearImgBtn.style.display = 'none';
+  };
+
+  // ── Lightbox ──
+  window.showLightbox = function(url) {
+    let lb = document.getElementById('igLightbox');
+    if (!lb) {
+      lb = document.createElement('div');
+      lb.id = 'igLightbox';
+      lb.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer';
+      lb.onclick = () => lb.remove();
+      document.body.appendChild(lb);
+    }
+    lb.innerHTML = '<img src="' + url + '" style="max-width:95vw;max-height:95vh;object-fit:contain;border-radius:8px;cursor:default" onclick="event.stopPropagation()">';
   };
 
   // ── Init ──
