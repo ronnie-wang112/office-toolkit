@@ -194,7 +194,7 @@ function Tool_image_gen(container) {
 
       // Poll for result
       let attempts = 0;
-      const maxAttempts = 120;
+      const maxAttempts = 200;
       const pollInterval = 3000;
 
       while (attempts < maxAttempts) {
