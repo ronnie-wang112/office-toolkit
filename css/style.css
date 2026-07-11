@@ -210,13 +210,9 @@ body {
    CARDS GRID
    ======================================== */
 .cards-grid {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  grid-auto-rows: auto;
+  display: grid !important;
+  grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
   gap: 14px;
-}
-.cards-grid > .tool-card {
-  grid-column: span 1;
 }
 
 .tool-card {
