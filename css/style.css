@@ -180,6 +180,7 @@ body {
 
 /* ----- Section headers ----- */
 .section-header {
+  grid-column: 1 / -1;
   margin: 32px 0 14px;
   padding-bottom: 10px;
   border-bottom: 2px solid var(--border-light);
