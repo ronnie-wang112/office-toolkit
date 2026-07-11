@@ -77,6 +77,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
         result = self._api("POST", f"{API_BASE}/rhart-image-g-2/image-to-image", payload)
         print(f"→ RunningHub response: {json.dumps(result, ensure_ascii=False)[:500]}", flush=True)
         if result:
+            if result.get('errorCode'):
+                return self._json({'success': False, 'taskId': '', 'error': result.get('errorMessage', 'API error')})
             return self._json({'success': True, 'taskId': result.get('taskId')})
         return self._error(502, 'API failed')
 
@@ -85,6 +87,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
             result = self._api('GET', f'{API_BASE}/task/result?taskId={task_id}')
             if not result:
                 return self._error(502, 'Query failed')
+            if result.get('errorCode'):
+                return self._json({'success': False, 'error': result.get('errorMessage', 'Task error')})
             status = result.get('status')
             if status == 'SUCCESS':
                 images = [{'url': r['url'], 'type': r.get('outputType', 'png')}
