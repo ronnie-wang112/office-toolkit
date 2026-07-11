@@ -4,4 +4,4 @@ WORKDIR /app
 COPY . .
 EXPOSE 8080
 
-CMD ["python3", "server.py"]
+CMD ["python", "server.py"]
