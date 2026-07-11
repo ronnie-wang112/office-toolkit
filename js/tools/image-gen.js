@@ -181,7 +181,8 @@ function Tool_image_gen(container) {
       // Submit task
       statusDiv.innerHTML = '<div class="progress-bar"><div class="progress-bar-fill" style="width:50%"></div></div><div class="progress-text">AI 正在生图...</div>';
 
-      const resp = await fetch(`${activeProxy}/api/generate`, {
+      const apiPath = refImageData ? '/api/generate' : '/api/text2img';
+      const resp = await fetch(`${activeProxy}${apiPath}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),

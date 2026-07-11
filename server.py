@@ -55,7 +55,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
         length = int(self.headers.get('Content-Length', 0))
         body = json.loads(self.rfile.read(length)) if length > 0 else {}
         if self.path == '/api/generate':
-            return self._generate(body)
+            return self._generate(body, 'image-to-image')
+        if self.path == '/api/text2img':
+            return self._generate(body, 'text-to-image')
         self._error(404, 'Unknown endpoint')
 
     def do_OPTIONS(self):
@@ -63,18 +65,20 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.send_response(204)
         self.end_headers()
 
-    def _generate(self, body):
+    def _generate(self, body, mode='image-to-image'):
         prompt = body.get('prompt', '')
         if not prompt:
             return self._error(400, 'Missing prompt')
+        endpoint = f'{API_BASE}/rhart-image-g-2/{mode}'
         payload = {
             'prompt': prompt,
-            'imageUrls': [body['imageData']] if body.get('imageData') else [],
             'aspectRatio': body.get('aspectRatio', '1:1'),
             'resolution': body.get('resolution', '1k'),
         }
-        print(f'→ 生图: {prompt[:60]}...')
-        result = self._api("POST", f"{API_BASE}/rhart-image-g-2/image-to-image", payload)
+        if mode == 'image-to-image':
+            payload['imageUrls'] = [body['imageData']] if body.get('imageData') else []
+        print(f'→ 生图 [{mode}]: {prompt[:60]}...')
+        result = self._api("POST", endpoint, payload)
         print(f"→ RunningHub response: {json.dumps(result, ensure_ascii=False)[:500]}", flush=True)
         if result:
             if result.get('errorCode'):
@@ -83,7 +87,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         return self._error(502, 'API failed')
 
     def _poll_task(self, task_id):
-        result = self._api('GET', f'{API_BASE}/task/result?taskId={task_id}')
+        result = self._api('POST', f'{API_BASE}/query', {'taskId': task_id})
         if not result:
             return self._error(502, 'Query failed')
         if result.get('errorCode'):
