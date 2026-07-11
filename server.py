@@ -88,8 +88,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
             return self._error(502, 'Query failed')
         if result.get('errorCode'):
             return self._json({'success': False, 'error': result.get('errorMessage', 'Task error')})
+        print(f'⏳ poll {task_id[:12]}... full={json.dumps(result, ensure_ascii=False)[:300]}', flush=True)
         status = result.get('status')
-        print(f'⏳ poll {task_id[:12]}... status={status}', flush=True)
         if status == 'SUCCESS':
             images = [{'url': r['url'], 'type': r.get('outputType', 'png')}
                       for r in result.get('results', [])
