@@ -74,7 +74,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
             'resolution': body.get('resolution', '1k'),
         }
         print(f'→ 生图: {prompt[:60]}...')
-        result = self._api('POST', f'{API_BASE}/rhart-image-g-2/image-to-image', payload)
+        result = self._api("POST", f"{API_BASE}/rhart-image-g-2/image-to-image", payload)
+        print(f"→ RunningHub response: {json.dumps(result, ensure_ascii=False)[:500]}", flush=True)
         if result:
             return self._json({'success': True, 'taskId': result.get('taskId')})
         return self._error(502, 'API failed')
