@@ -93,15 +93,9 @@ const OfficeToolkit = {
   currentTool: null,
 
   init() {
-    try { document.getElementById('cardsGrid').innerHTML = '<div style="padding:20px;text-align:center">✅ JS 加载成功，正在渲染...</div>'; } catch(e) {}
     Utils.setTheme(Utils.getTheme());
     this.bindEvents();
-    try {
-      this.renderAllCards();
-    } catch(e) {
-      document.getElementById('cardsGrid').innerHTML = '<div style="padding:20px;text-align:center;color:red">❌ 渲染失败: ' + e.message + '</div>';
-      return;
-    }
+    this.renderAllCards();
     this.handleHash();
     window.addEventListener('hashchange', () => this.handleHash());
   },
