@@ -164,11 +164,19 @@ const OfficeToolkit = {
     this.currentTool = tool;
     window.location.hash = `#/${tool.cat || 'utility'}/${tool.id}`;
 
-    document.getElementById('backBtn').style.display = 'flex';
-    document.getElementById('cardsGrid').style.display = 'none';
+    const backBtn = document.getElementById('backBtn');
+    const cardsGrid = document.getElementById('cardsGrid');
+    const toolPanel = document.getElementById('toolPanel');
+    const container = document.getElementById('toolContainer');
+
+    // Quick debug
+    container.innerHTML = `<div style="padding:20px;text-align:center">🔧 正在加载 ${tool.name} (id=${tool.id})...</div>`;
+
+    if (backBtn) backBtn.style.display = 'flex';
+    if (cardsGrid) cardsGrid.style.display = 'none';
     document.querySelectorAll('.section-header').forEach(h => h.style.display = 'none');
     document.querySelectorAll('.section-cards').forEach(h => h.style.display = 'none');
-    document.getElementById('toolPanel').classList.remove('hidden');
+    if (toolPanel) toolPanel.classList.remove('hidden');
 
     if (tool.external) {
       const externalPages = {
