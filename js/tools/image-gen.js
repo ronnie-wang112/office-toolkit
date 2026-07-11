@@ -123,7 +123,7 @@ function Tool_image_gen(container) {
         <div style="border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;background:var(--bg-card)">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
             <span style="font-size:0.78rem;font-weight:600">${modeLabel} · ${h.ratio} · ${h.res}</span>
-            <span style="font-size:0.7rem;color:var(--text-muted)">${time}</span>
+            <span style="font-size:0.7rem;color:var(--text-muted)">${time} · ⏱ ${h.duration || '?'}秒</span>
           </div>
           <div style="font-size:0.78rem;color:var(--text);margin-bottom:8px;line-height:1.4">${h.prompt}</div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-start">
@@ -241,6 +241,7 @@ function Tool_image_gen(container) {
     }
 
     isGenerating = true;
+    const genStartTime = Date.now();
     const btn = $('#igGenerate');
     btn.disabled = true;
     btn.textContent = '⏳ 排队中...';
@@ -296,12 +297,14 @@ function Tool_image_gen(container) {
           Utils.toast(`生成 ${pollData.images.length} 张图片`, 'success');
 
           // Save to history
+          const genDuration = Math.round((Date.now() - genStartTime) / 1000);
           saveHistory({
             prompt,
             mode: refImageData ? 'image-to-image' : 'text-to-image',
             ratio: ratioSel.value,
             res: resSel.value,
             time: Date.now(),
+            duration: genDuration,
             images: pollData.images,
             refImage: refImageData || null,
           });
