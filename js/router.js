@@ -153,13 +153,14 @@ const OfficeToolkit = {
 
     grid.innerHTML = html;
 
-    // Bind click events
-    grid.querySelectorAll('.section-cards .tool-card').forEach(card => {
-      card.addEventListener('click', () => {
+    // Bind click events using event delegation
+    grid.onclick = function(e) {
+      const card = e.target.closest('.tool-card');
+      if (card) {
         const toolId = card.dataset.tool;
-        this.activateTool(toolId);
-      });
-    });
+        OfficeToolkit.activateTool(toolId);
+      }
+    };
   },
 
   activateTool(toolId) {
