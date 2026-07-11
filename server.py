@@ -83,23 +83,22 @@ class Handler(http.server.BaseHTTPRequestHandler):
         return self._error(502, 'API failed')
 
     def _poll_task(self, task_id):
-        for i in range(80):
-            result = self._api('GET', f'{API_BASE}/task/result?taskId={task_id}')
-            if not result:
-                return self._error(502, 'Query failed')
-            if result.get('errorCode'):
-                return self._json({'success': False, 'error': result.get('errorMessage', 'Task error')})
-            status = result.get('status')
-            if status == 'SUCCESS':
-                images = [{'url': r['url'], 'type': r.get('outputType', 'png')}
-                          for r in result.get('results', [])
-                          if r.get('url') and r.get('outputType') in ('png', 'jpg', 'jpeg', 'webp')]
-                return self._json({'success': True, 'status': 'SUCCESS', 'images': images, 'taskId': task_id})
-            if status in ('FAILED', 'ERROR'):
-                return self._json({'success': False, 'error': result.get('errorMessage', 'Failed')})
-            if i % 10 == 0:
-                print(f'⏳ 等待... ({i*3}s)')
-        return self._json({'success': False, 'error': 'Timeout'})
+        result = self._api('GET', f'{API_BASE}/task/result?taskId={task_id}')
+        if not result:
+            return self._error(502, 'Query failed')
+        if result.get('errorCode'):
+            return self._json({'success': False, 'error': result.get('errorMessage', 'Task error')})
+        status = result.get('status')
+        if status == 'SUCCESS':
+            images = [{'url': r['url'], 'type': r.get('outputType', 'png')}
+                      for r in result.get('results', [])
+                      if r.get('url') and r.get('outputType') in ('png', 'jpg', 'jpeg', 'webp')]
+            print(f'✅ 完成: {task_id}')
+            return self._json({'success': True, 'status': 'SUCCESS', 'images': images, 'taskId': task_id})
+        if status in ('FAILED', 'ERROR'):
+            return self._json({'success': False, 'error': result.get('errorMessage', 'Failed')})
+        # Still processing — return pending status
+        return self._json({'success': True, 'status': status or 'PENDING', 'taskId': task_id})
 
     def _api(self, method, url, body=None):
         try:
