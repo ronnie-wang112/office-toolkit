@@ -209,7 +209,7 @@ function Tool_image_gen(container) {
   async function checkProxy() {
     for (const url of PROXY_URLS) {
       try {
-        const resp = await fetch(`${url}/health`);
+        const resp = await fetch(`${url}/?action=health`);
         if (resp.ok) {
           activeProxy = url;
           proxyAvailable = true;
@@ -258,8 +258,9 @@ function Tool_image_gen(container) {
 
       statusDiv.innerHTML = '<div class="progress-bar"><div class="progress-bar-fill" style="width:50%"></div></div><div class="progress-text">AI 正在生图...</div>';
 
-      const apiPath = refImageData ? '/api/generate' : '/api/text2img';
-      const resp = await fetch(`${activeProxy}${apiPath}`, {
+      body.action = 'generate';
+      body.mode = refImageData ? 'image-to-image' : 'text-to-image';
+      const resp = await fetch(`${activeProxy}/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -281,7 +282,7 @@ function Tool_image_gen(container) {
         const pct = Math.min(90, 30 + (attempts / maxAttempts) * 60);
         statusDiv.innerHTML = `<div class="progress-bar"><div class="progress-bar-fill" style="width:${pct}%"></div></div><div class="progress-text">生成中... (${Math.round(attempts * 3)}秒)</div>`;
 
-        const pollResp = await fetch(`${activeProxy}/api/task/${data.taskId}`);
+        const pollResp = await fetch(`${activeProxy}/?action=poll&taskId=${data.taskId}`);
         const pollData = await pollResp.json();
 
         if (!pollData.success) {

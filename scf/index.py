@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 腾讯云函数 SCF Web 函数 — RunningHub 生图 API 代理
+函数 URL 只支持根路径 /，通过 query 和 body 区分动作
 """
 import json
 import urllib.request
-import urllib.parse
 import ssl
 import os
 
@@ -12,38 +12,31 @@ API_BASE = 'https://www.runninghub.cn/openapi/v2'
 API_KEY = os.environ.get('RUNNINGHUB_API_KEY', '')
 
 def main_handler(event, context):
-    """Web 函数入口 — 兼容多种事件格式"""
-    # Web 函数 event 直接是请求体字典
     method = event.get('httpMethod', 'GET')
-    path = event.get('path', '/')
-    
-    # 兼容不同格式：body 可能是字符串或已解析
-    body_str = event.get('body', '{}')
-    if body_str is None:
-        body_str = '{}'
-    
+    qs = event.get('queryString', {}) or {}
+    body_str = event.get('body', '{}') or '{}'
     try:
         body = json.loads(body_str) if isinstance(body_str, str) else body_str
     except:
         body = {}
 
-    if method == 'GET' and path == '/health':
-        return _resp({'status': 'ok'})
-
-    if method == 'GET' and path.startswith('/api/task/'):
-        task_id = path.split('/')[-1]
-        return _poll(task_id)
-
-    if method == 'POST' and path == '/api/generate':
-        return _generate(body, 'image-to-image')
-
-    if method == 'POST' and path == '/api/text2img':
-        return _generate(body, 'text-to-image')
+    action = body.get('action') or qs.get('action', '')
 
     if method == 'OPTIONS':
-        return {'statusCode': 204, 'headers': _cors(), 'body': ''}
+        return _cors_resp()
 
-    return _resp({'error': 'Not found', 'path': path, 'method': method}, 404)
+    if action == 'health':
+        return _resp({'status': 'ok'})
+
+    if action == 'poll':
+        task_id = qs.get('taskId') or body.get('taskId', '')
+        return _poll(task_id) if task_id else _resp({'error': 'Missing taskId'}, 400)
+
+    if method == 'POST' and action == 'generate':
+        mode = body.get('mode', 'image-to-image')
+        return _generate(body, mode)
+
+    return _resp({'error': 'Unknown action', 'action': action}, 404)
 
 def _generate(body, mode):
     prompt = body.get('prompt', '')
@@ -105,13 +98,12 @@ def _cors():
         'Access-Control-Allow-Headers': 'Content-Type',
     }
 
+def _cors_resp():
+    return {'statusCode': 204, 'headers': _cors(), 'body': ''}
+
 def _resp(data, code=200):
-    body_str = json.dumps(data, ensure_ascii=False)
     return {
         'statusCode': code,
-        'headers': {
-            'Content-Type': 'application/json; charset=utf-8',
-            **_cors(),
-        },
-        'body': body_str,
+        'headers': {**_cors(), 'Content-Type': 'application/json; charset=utf-8'},
+        'body': json.dumps(data, ensure_ascii=False),
     }
