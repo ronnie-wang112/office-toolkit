@@ -4,7 +4,7 @@ function Tool_image_gen(container) {
   const MAX_HISTORY = 20;
 
   const PROXY_URLS = [
-    '',
+    'https://office-toolkit-production.up.railway.app',
     'http://localhost:8765',
   ];
   let activeProxy = PROXY_URLS[0];
