@@ -8,6 +8,11 @@ function Tool_image_gen(container) {
     'https://office-toolkit-production.up.railway.app',
     'http://localhost:8765',
   ];
+
+  const PRESETS = {
+    '白底抠图': 'You are the world\'s best commercial product photographer, luxury advertising retoucher, and Amazon/e-commerce creative director.\nYour mission is to transform any uploaded product into a premium commercial product image suitable for high-conversion e-commerce listings.\nBefore editing, first analyze the product\'s category, material, color, texture, finish, intended market, and premium selling points.\nThen intelligently enhance the image while preserving the true identity of the product.\n\nApply the following professional standards:\n\n## Product Analysis\n- Automatically identify the product type.\n- Recognize the material (metal, glass, wood, leather, plastic, fabric, ceramic, food, cosmetic, electronics, etc.)\n- Determine the most suitable commercial lighting.\n- Determine the optimal contrast and color grading.\n- Preserve brand identity and proportions.\n\n## Professional Retouching\n\nRemove:\n- Dust\n- Scratches\n- Fingerprints\n- Noise\n- Sensor spots\n- Compression artifacts\n- Uneven lighting\n- Distracting reflections\n- Small defects\n\nImprove:\n- Sharpness\n- Micro contrast\n- Texture clarity\n- Dynamic range\n- Material realism\n- Surface quality\n- Premium appearance\n\nMaintain:\n- Natural textures\n- Accurate colors\n- Realistic reflections\n- Correct proportions\n- Authentic materials\nNever over-process.\n\n## Lighting\nAutomatically choose the best commercial lighting style:\n- Luxury softbox lighting\n- Studio gradient lighting\n- Soft premium lighting\n- High-end advertising lighting\n- Directional highlights\n- Clean controlled shadows\nThe product should appear expensive, premium, and realistic.\n\n## Material Optimization\nIf metal:\nEnhance brushed texture and realistic reflections.\nIf glass:\nIncrease transparency and crystal clarity.\nIf leather:\nEnhance grain without looking artificial.\nIf wood:\nReveal natural grain and depth.\nIf plastic:\nImprove finish while avoiding fake CGI appearance.\nIf electronics:\nIncrease precision, clean edges, premium finish.\nIf cosmetics:\nEnhance elegance, luxury reflections, and smooth packaging.\nIf food:\nIncrease freshness, richness, moisture, and appetite appeal while remaining realistic.\nAutomatically optimize according to detected material.\n\n## Color\nImprove color accuracy.\nIncrease richness without oversaturation.\nMaintain white balance.\nAvoid unrealistic colors.\n\n## Composition\nKeep the product centered.\nCorrect perspective if needed.\nKeep clean spacing.\nDo not crop important parts.\n\n## Background\nIf the existing background is distracting, replace it with a perfect pure white (#FFFFFF) seamless studio background.\nIf the original background is already clean studio quality, improve it without changing it.\nRemove all distractions.\n\n## Commercial Quality\nOutput should look suitable for:\nAmazon\nShopify\nApple-style advertising\nLuxury catalog\nPremium brand website\nProfessional product brochure\nThe final image must look like it was photographed in a million-dollar commercial photography studio.\nPhotorealistic.\nUltra clean.\nLuxury.\nNatural.\nCommercial.\nDo not add objects.\nDo not invent features.\nDo not modify logos.\nDo not change product structure.\nDo not change colors unless correcting white balance.\nPreserve complete product authenticity while maximizing premium appearance.\n\nAesthetic goals:\nApple-level product photography\n\n\nDecision Rules:\nAnalyze the uploaded product first.\nDetermine what improvements will most increase perceived value while maintaining authenticity.\nPrioritize realism over exaggeration.\nOptimize every adjustment according to the product category instead of applying generic edits.\nEvery enhancement should increase perceived quality, trust, and purchase intent.\nIf a modification could reduce authenticity, do not apply it.\nDo not alter any existing details of the product.',
+    '3d精修': 'Visual Finish:\nMaintain a true photographic appearance while incorporating the refined visual quality of world-class commercial CGI rendering.\nThe product should look exceptionally premium, with flawless material definition, crisp edge transitions, ultra-clean surfaces, and perfectly controlled reflections.\nEnhance perceived precision without looking synthetic.\nEvery material should exhibit physically accurate light interaction, realistic depth, subtle micro-texture, and premium surface finish.\nThe final image should resemble a luxury commercial advertisement created using a combination of high-end studio photography and premium CGI refinement.\nPhotorealistic first.\nCGI quality second.\nNever appear artificial.\n\nSurface Quality:\nEnhance microscopic surface details.\nIncrease material richness.\nImprove edge definition.\nRefine specular highlights.\nCreate smooth highlight roll-off.\nAdd subtle depth to every material.\nMaintain realistic imperfections where appropriate.\nAvoid plastic-looking surfaces.\nAvoid overly sharp textures.\nAvoid excessive contrast.\n\nPremium Industrial Design Aesthetic:\nInspired by Apple, Dyson, Bang & Olufsen, Leica, and luxury industrial design photography.\nElegant.\nMinimal.\nPrecision-crafted.\nSophisticated.\nModern.\nClean.\nTimeless.\nHigh-end.\n\nRendering Style:\nInspired by the visual quality of KeyShot, Octane Render, Redshift, Corona Renderer, and V-Ray product visualization.\nUltra-clean global illumination.\nSoft indirect lighting.\nAccurate physically based reflections.\nPerfect contact shadows.\nControlled bloom.\nNatural ambient occlusion.\nRealistic material response.\nHigh-end commercial rendering quality.\nMaintain complete photographic realism.\n\nOptical Quality:\nLens-grade clarity.\nCinematic tonal transitions.\nBeautiful light diffusion.\nControlled contrast.\nSoft premium shadows.\nRefined highlight gradients.\nExceptional color separation.\nPerfect depth perception.\nLuxury visual polish.\nAward-winning commercial advertising quality.',
+  };
   let activeProxy = PROXY_URLS[0];
   let generatedImages = [];
   let isGenerating = false;
@@ -37,6 +42,10 @@ function Tool_image_gen(container) {
         <textarea id="igPrompt" rows="3" placeholder="描述你想生成的图片内容，越详细越好...
 例如：一只可爱的橘猫坐在窗台上，阳光洒在它身上，窗外是樱花树，摄影风格，高画质" style="width:100%;resize:vertical;font-size:0.9rem;padding:12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);color:var(--text)"></textarea>
         <div style="font-size:0.72rem;color:var(--text-muted);margin-top:4px"><span id="igCharCount">0</span>/20000 字符</div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn btn-sm" id="igPresetBg" style="font-size:0.78rem">📸 白底抠图</button>
+          <button class="btn btn-sm" id="igPreset3d" style="font-size:0.78rem">💎 3d精修</button>
+        </div>
       </div>
 
       <div class="form-group">
@@ -195,6 +204,18 @@ function Tool_image_gen(container) {
       refImageData = reader.result;
     };
     reader.readAsDataURL(f);
+  };
+
+  // ── Preset buttons ──
+  $('#igPresetBg').onclick = () => {
+    promptEl.value = PRESETS['白底抠图'];
+    charCount.textContent = promptEl.value.length;
+    Utils.toast('已填入：白底抠图预设', 'success');
+  };
+  $('#igPreset3d').onclick = () => {
+    promptEl.value = PRESETS['3d精修'];
+    charCount.textContent = promptEl.value.length;
+    Utils.toast('已填入：3d精修预设', 'success');
   };
 
   $('#igClearImg').onclick = () => {
