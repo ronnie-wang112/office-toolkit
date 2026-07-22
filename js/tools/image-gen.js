@@ -10,7 +10,69 @@ function Tool_image_gen(container) {
   ];
 
   const PRESETS = {
-    '场景图【防失真】': 'Visual Finish:\nMaintain a true photographic appearance while incorporating the refined visual quality of world-class commercial CGI rendering.\nThe product should look exceptionally premium, with flawless material definition, crisp edge transitions, ultra-clean surfaces, and perfectly controlled reflections.\nEnhance perceived precision without looking synthetic.\nEvery material should exhibit physically accurate light interaction, realistic depth, subtle micro-texture, and premium surface finish.\nThe final image should resemble a luxury commercial advertisement created using a combination of high-end studio photography and premium CGI refinement.\nPhotorealistic first.\nCGI quality second.\nNever appear artificial.\n\nSurface Quality:\nEnhance microscopic surface details.\nIncrease material richness.\nImprove edge definition.\nRefine specular highlights.\nCreate smooth highlight roll-off.\nAdd subtle depth to every material.\nMaintain realistic imperfections where appropriate.\nAvoid plastic-looking surfaces.\nAvoid overly sharp textures.\nAvoid excessive contrast.\n\nPremium Industrial Design Aesthetic:\nInspired by Apple, Dyson, Bang & Olufsen, Leica, and luxury industrial design photography.\nElegant.\nMinimal.\nPrecision-crafted.\nSophisticated.\nModern.\nClean.\nTimeless.\nHigh-end.\n\nRendering Style:\nInspired by the visual quality of KeyShot, Octane Render, Redshift, Corona Renderer, and V-Ray product visualization.\nUltra-clean global illumination.\nSoft indirect lighting.\nAccurate physically based reflections.\nPerfect contact shadows.\nControlled bloom.\nNatural ambient occlusion.\nRealistic material response.\nHigh-end commercial rendering quality.\nMaintain complete photographic realism.\n\nOptical Quality:\nLens-grade clarity.\nCinematic tonal transitions.\nBeautiful light diffusion.\nControlled contrast.\nSoft premium shadows.\nRefined highlight gradients.\nExceptional color separation.\nPerfect depth perception.\nLuxury visual polish.\nAward-winning commercial advertising quality.',
+    '场景图【防失真】': '【高清细节保护约束】
+
+保持原始产品图的所有高清细节，不重新设计、不重绘产品。
+
+必须保留：
+- 产品原始轮廓
+- 产品边缘锐度
+- 材质纹理
+- 表面细节
+- Logo和文字清晰度
+- 原始颜色准确性
+- 产品结构比例
+
+图像质量要求：
+- ultra sharp product details
+- high frequency texture preservation
+- crisp edges
+- micro surface details preserved
+- realistic material texture
+- professional commercial product photography
+- true high-resolution output
+
+禁止：
+- blurry details
+- soft focus
+- artificial smoothing
+- over denoise
+- excessive beauty retouching
+- loss of texture
+- melted edges
+- distorted product details
+- fake plastic appearance
+
+产品必须保持100%清晰锐利，
+所有产品区域均处于精准对焦范围，
+不要使用浅景深导致产品主体模糊。
+
+Camera settings:
+- professional studio product photography
+- macro lens photography
+- focus stacking technique
+- f/8-f/11 aperture
+- full product sharpness
+- front-to-back focus consistency
+- realistic optical clarity
+
+The entire product must remain in sharp focus,
+including edges, corners, labels and surface textures.
+
+Image editing mode:
+Use the original image as the absolute source of truth.
+
+Do not regenerate the product.
+Do not reinterpret the product.
+Do not modify product geometry.
+
+Only edit:
+- lighting
+- background
+- shadow
+- environment
+
+Preserve original pixels and product details wherever possible.',
     '白底抠图': 'You are the world\'s best commercial product photographer, luxury advertising retoucher, and Amazon/e-commerce creative director.\nYour mission is to transform any uploaded product into a premium commercial product image suitable for high-conversion e-commerce listings.\nBefore editing, first analyze the product\'s category, material, color, texture, finish, intended market, and premium selling points.\nThen intelligently enhance the image while preserving the true identity of the product.\n\nApply the following professional standards:\n\n## Product Analysis\n- Automatically identify the product type.\n- Recognize the material (metal, glass, wood, leather, plastic, fabric, ceramic, food, cosmetic, electronics, etc.)\n- Determine the most suitable commercial lighting.\n- Determine the optimal contrast and color grading.\n- Preserve brand identity and proportions.\n\n## Professional Retouching\n\nRemove:\n- Dust\n- Scratches\n- Fingerprints\n- Noise\n- Sensor spots\n- Compression artifacts\n- Uneven lighting\n- Distracting reflections\n- Small defects\n\nImprove:\n- Sharpness\n- Micro contrast\n- Texture clarity\n- Dynamic range\n- Material realism\n- Surface quality\n- Premium appearance\n\nMaintain:\n- Natural textures\n- Accurate colors\n- Realistic reflections\n- Correct proportions\n- Authentic materials\nNever over-process.\n\n## Lighting\nAutomatically choose the best commercial lighting style:\n- Luxury softbox lighting\n- Studio gradient lighting\n- Soft premium lighting\n- High-end advertising lighting\n- Directional highlights\n- Clean controlled shadows\nThe product should appear expensive, premium, and realistic.\n\n## Material Optimization\nIf metal:\nEnhance brushed texture and realistic reflections.\nIf glass:\nIncrease transparency and crystal clarity.\nIf leather:\nEnhance grain without looking artificial.\nIf wood:\nReveal natural grain and depth.\nIf plastic:\nImprove finish while avoiding fake CGI appearance.\nIf electronics:\nIncrease precision, clean edges, premium finish.\nIf cosmetics:\nEnhance elegance, luxury reflections, and smooth packaging.\nIf food:\nIncrease freshness, richness, moisture, and appetite appeal while remaining realistic.\nAutomatically optimize according to detected material.\n\n## Color\nImprove color accuracy.\nIncrease richness without oversaturation.\nMaintain white balance.\nAvoid unrealistic colors.\n\n## Composition\nKeep the product centered.\nCorrect perspective if needed.\nKeep clean spacing.\nDo not crop important parts.\n\n## Background\nIf the existing background is distracting, replace it with a perfect pure white (#FFFFFF) seamless studio background.\nIf the original background is already clean studio quality, improve it without changing it.\nRemove all distractions.\n\n## Commercial Quality\nOutput should look suitable for:\nAmazon\nShopify\nApple-style advertising\nLuxury catalog\nPremium brand website\nProfessional product brochure\nThe final image must look like it was photographed in a million-dollar commercial photography studio.\nPhotorealistic.\nUltra clean.\nLuxury.\nNatural.\nCommercial.\nDo not add objects.\nDo not invent features.\nDo not modify logos.\nDo not change product structure.\nDo not change colors unless correcting white balance.\nPreserve complete product authenticity while maximizing premium appearance.\n\nAesthetic goals:\nApple-level product photography\n\n\nDecision Rules:\nAnalyze the uploaded product first.\nDetermine what improvements will most increase perceived value while maintaining authenticity.\nPrioritize realism over exaggeration.\nOptimize every adjustment according to the product category instead of applying generic edits.\nEvery enhancement should increase perceived quality, trust, and purchase intent.\nIf a modification could reduce authenticity, do not apply it.\nDo not alter any existing details of the product.',
     '3d精修': 'Visual Finish:\nMaintain a true photographic appearance while incorporating the refined visual quality of world-class commercial CGI rendering.\nThe product should look exceptionally premium, with flawless material definition, crisp edge transitions, ultra-clean surfaces, and perfectly controlled reflections.\nEnhance perceived precision without looking synthetic.\nEvery material should exhibit physically accurate light interaction, realistic depth, subtle micro-texture, and premium surface finish.\nThe final image should resemble a luxury commercial advertisement created using a combination of high-end studio photography and premium CGI refinement.\nPhotorealistic first.\nCGI quality second.\nNever appear artificial.\n\nSurface Quality:\nEnhance microscopic surface details.\nIncrease material richness.\nImprove edge definition.\nRefine specular highlights.\nCreate smooth highlight roll-off.\nAdd subtle depth to every material.\nMaintain realistic imperfections where appropriate.\nAvoid plastic-looking surfaces.\nAvoid overly sharp textures.\nAvoid excessive contrast.\n\nPremium Industrial Design Aesthetic:\nInspired by Apple, Dyson, Bang & Olufsen, Leica, and luxury industrial design photography.\nElegant.\nMinimal.\nPrecision-crafted.\nSophisticated.\nModern.\nClean.\nTimeless.\nHigh-end.\n\nRendering Style:\nInspired by the visual quality of KeyShot, Octane Render, Redshift, Corona Renderer, and V-Ray product visualization.\nUltra-clean global illumination.\nSoft indirect lighting.\nAccurate physically based reflections.\nPerfect contact shadows.\nControlled bloom.\nNatural ambient occlusion.\nRealistic material response.\nHigh-end commercial rendering quality.\nMaintain complete photographic realism.\n\nOptical Quality:\nLens-grade clarity.\nCinematic tonal transitions.\nBeautiful light diffusion.\nControlled contrast.\nSoft premium shadows.\nRefined highlight gradients.\nExceptional color separation.\nPerfect depth perception.\nLuxury visual polish.\nAward-winning commercial advertising quality.',
   };
